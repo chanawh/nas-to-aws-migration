@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars. Defaults run against LocalStack on :4566.
+# For moto in this VM, set endpoint_url = "http://127.0.0.1:5000"
+# (127.0.0.1, not localhost: moto binds IPv4 only).
+# For real AWS, set use_emulator = false, endpoint_url = "", and use
+# real credentials via env vars, never in this file.
+use_emulator  = true
+endpoint_url  = "http://localhost:4566"
+region        = "us-west-2"
+bucket_prefix = "nas2aws-migration"

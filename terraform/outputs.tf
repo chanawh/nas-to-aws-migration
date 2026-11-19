@@ -1,0 +1,54 @@
+output "bucket_names" {
+  description = "One bucket per share."
+  value       = local.bucket_names
+}
+
+output "bucket_arns" {
+  value = { for k, b in aws_s3_bucket.shares : k => b.arn }
+}
+
+output "migration_user_name" {
+  value = aws_iam_user.migration.name
+}
+
+output "kms_key_arn" {
+  value = aws_kms_key.migration.arn
+}
+
+output "audit_table_name" {
+  value = aws_dynamodb_table.audit.name
+}
+
+output "alert_topic_arn" {
+  value = aws_sns_topic.alerts.arn
+}
+
+output "events_queue_url" {
+  value = aws_sqs_queue.events.url
+}
+
+output "validator_function_name" {
+  value = aws_lambda_function.validator.function_name
+}
+
+output "fsx_enabled" {
+  description = "True only when enable_fsx_datasync was set. False on every emulator run."
+  value       = var.enable_fsx_datasync
+}
+
+output "fsx_filesystem_id" {
+  value = var.enable_fsx_datasync ? aws_fsx_ontap_file_system.migration[0].id : ""
+}
+
+output "datasync_task_arn" {
+  value = var.enable_fsx_datasync ? aws_datasync_task.migration[0].arn : ""
+}
+
+output "cloudtrail_enabled" {
+  value = var.enable_cloudtrail
+}
+
+output "endpoint_url" {
+  description = "Emulator address in use, or empty for real AWS."
+  value       = var.use_emulator ? var.endpoint_url : ""
+}

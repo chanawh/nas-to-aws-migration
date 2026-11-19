@@ -1,0 +1,39 @@
+# CI: every push runs the whole project for $0, no AWS account needed.
+# Unit tests (moto in-process) + Terraform fmt/validate + the full
+# moto demo (apply, sync, verify, corrupt, repair, destroy).
+# This is the proof a hiring manager can click: green CI, not a claim.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - name: Install Python deps
+        run: |
+          python -m venv /tmp/venv
+          /tmp/venv/bin/pip install -q boto3 "moto[server]"
+      - name: Unit tests
+        run: |
+          cd python
+          /tmp/venv/bin/python -m unittest discover -s tests -v
+      - name: Terraform fmt and validate
+        run: |
+          cd terraform
+          terraform init -backend=false -input=false
+          terraform fmt -check
+          terraform validate
+      - name: Full demo against moto
+        run: bash scripts/run_local_demo.sh
+        env:
+          TF: terraform

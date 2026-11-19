@@ -1,0 +1,60 @@
+{
+  "source": "/tmp/nas2aws-demo/source",
+  "endpoint": "http://127.0.0.1:5000",
+  "quotas": {
+    "finance": {
+      "bytes": 225280,
+      "quota": 2097152,
+      "over": false
+    },
+    "it-support": {
+      "bytes": 282624,
+      "quota": 2097152,
+      "over": false
+    },
+    "it-operations": {
+      "bytes": 376832,
+      "quota": 1048576,
+      "over": false
+    },
+    "operations": {
+      "bytes": 278528,
+      "quota": 1048576,
+      "over": false
+    }
+  },
+  "shares": {
+    "finance": {
+      "checked": 6,
+      "ok": 6,
+      "missing": 0,
+      "mismatched": 0,
+      "extra": 0,
+      "passed": true
+    },
+    "it-operations": {
+      "checked": 7,
+      "ok": 7,
+      "missing": 0,
+      "mismatched": 0,
+      "extra": 0,
+      "passed": true
+    },
+    "it-support": {
+      "checked": 6,
+      "ok": 6,
+      "missing": 0,
+      "mismatched": 0,
+      "extra": 0,
+      "passed": true
+    },
+    "operations": {
+      "checked": 5,
+      "ok": 5,
+      "missing": 0,
+      "mismatched": 0,
+      "extra": 0,
+      "passed": true
+    }
+  }
+}

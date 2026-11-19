@@ -1,0 +1,21 @@
+# LocalStack - the primary emulator for this project.
+# Requires Docker. Start: docker compose up -d. Stop: docker compose down -v.
+# Image is pinned to 4.14.0, the last community release that runs without
+# a paid auth token. From 2026.03.0 onward, even the free Hobby tier needs
+# a LocalStack account and auth token (LOCALSTACK_AUTH_TOKEN).
+# If you have no Docker, use moto instead: see scripts/start_moto.sh.
+# The Terraform and Python code point at http://localhost:4566 by default.
+services:
+  localstack:
+    image: localstack/localstack:4.14.0
+    container_name: nas2aws-localstack
+    environment:
+      - SERVICES=s3,iam,sts,cloudwatch,logs
+      - PERSISTENCE=0
+      - AWS_DEFAULT_REGION=us-west-2
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    ports:
+      - "4566:4566"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

@@ -1,0 +1,16 @@
+# Copy to onefs.yaml for your own notes. Do NOT put a real password here.
+# The CLI reads ONEFS_USER / ONEFS_PASSWORD from the environment instead.
+# onefs.yaml is a record of your node, not a credential store.
+onefs_host: 192.168.1.50        # bridged IP of the OneFS virtual node in VMware Workstation Pro
+onefs_user: root
+cluster_name: nas2aws-onefs     # set in the first-boot wizard
+onefs_version: "9.12"           # simulator download, Aug 2025, 477 MB
+vmware: Workstation Pro
+network: Bridged               # NAT will hide the node from the host - use Bridged
+mount_root_windows: C:\nas2aws\onefs
+mount_root_linux: /mnt/onefs
+shares:
+  - finance
+  - it-support
+  - it-operations
+  - operations
