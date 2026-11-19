@@ -45,6 +45,16 @@ with answers. CI runs the whole project on every push:
 22 unit tests, Terraform fmt/validate, and the full demo
 against moto, see `.github/workflows/ci.yml`.
 
+**System design:** `docs/SYSTEM_DESIGN.md` covers
+requirements, scale and capacity at 80 TB, the data model,
+failure modes, security, observability, cost, tradeoffs,
+and what to do next at real scale. `docs/adr/` holds the
+five architecture decisions, each with context, decision,
+and consequences. `SECURITY.md` states what is safe and
+what is lab-only. That is the 2026-competitive part: not
+just code that runs, but a design a reviewer can argue
+with, and evidence that the argument was thought through.
+
 ## AWS services used
 
 | Service | What it does here | Runs in emulator? |
