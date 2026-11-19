@@ -1,0 +1,28 @@
+test_check_onefs_reads_cluster_info_from_api (test_onefs.TestOneFS.test_check_onefs_reads_cluster_info_from_api) ... ok
+test_check_unreachable_host_fails_cleanly (test_onefs.TestOneFS.test_check_unreachable_host_fails_cleanly) ... ok
+test_mount_dry_run_prints_commands_and_mounts_nothing (test_onefs.TestOneFS.test_mount_dry_run_prints_commands_and_mounts_nothing) ... ok
+test_seed_copies_dataset_into_mount_tree (test_onefs.TestOneFS.test_seed_copies_dataset_into_mount_tree) ... ok
+test_seed_refuses_when_shares_not_mounted (test_onefs.TestOneFS.test_seed_refuses_when_shares_not_mounted) ... ok
+test_sync_from_seeded_mount_root_passes_verify (test_onefs.TestOneFS.test_sync_from_seeded_mount_root_passes_verify) ... ok
+test_unmount_dry_run_prints_commands (test_onefs.TestOneFS.test_unmount_dry_run_prints_commands) ... ok
+test_validate_mount_root_flags_empty_share (test_onefs.TestOneFS.test_validate_mount_root_flags_empty_share) ... ok
+test_acl_mapping_is_clean_for_generated_dataset (test_s3_sync.TestS3Sync.test_acl_mapping_is_clean_for_generated_dataset) ... ok
+test_changed_file_is_reuploaded_and_unchanged_are_not (test_s3_sync.TestS3Sync.test_changed_file_is_reuploaded_and_unchanged_are_not) ... ok
+test_corrupted_object_is_detected_and_repaired (test_s3_sync.TestS3Sync.test_corrupted_object_is_detected_and_repaired) ... ok
+test_delete_removes_orphan_only_with_flag (test_s3_sync.TestS3Sync.test_delete_removes_orphan_only_with_flag) ... ok
+test_dry_run_uploads_nothing_and_writes_no_manifest (test_s3_sync.TestS3Sync.test_dry_run_uploads_nothing_and_writes_no_manifest) ... ok
+test_initial_sync_uploads_everything_and_verify_passes (test_s3_sync.TestS3Sync.test_initial_sync_uploads_everything_and_verify_passes) ... ok
+test_manifest_is_stored_as_s3_object (test_s3_sync.TestS3Sync.test_manifest_is_stored_as_s3_object) ... ok
+test_over_quota_share_is_skipped_whole (test_s3_sync.TestS3Sync.test_over_quota_share_is_skipped_whole) ... ok
+test_quotas_are_not_exceeded_by_generated_dataset (test_s3_sync.TestS3Sync.test_quotas_are_not_exceeded_by_generated_dataset) ... ok
+test_second_sync_is_noop (test_s3_sync.TestS3Sync.test_second_sync_is_noop) ... ok
+test_audit_write_records_every_file (test_services.TestServices.test_audit_write_records_every_file) ... ok
+test_lambda_validator_mismatch (test_services.TestServices.test_lambda_validator_mismatch) ... ok
+test_lambda_validator_ok (test_services.TestServices.test_lambda_validator_ok) ... ok
+test_sns_publish_on_verify_failure (test_services.TestServices.test_sns_publish_on_verify_failure) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 5.908s
+
+OK
+exit:0
