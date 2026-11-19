@@ -38,6 +38,35 @@ flowchart LR
     S3 --> DS --> FSx
 ```
 
+## Who built this, and why
+
+Andrew Chan, Technical Support Engineer II at Dell
+Technologies since December 2018, escalation point for
+150+ enterprise Dell PowerScale (OneFS) environments and
+1,400+ high-severity incidents, with 15+ Python, Bash and
+PowerShell automation tools and 20+ runbooks built on the
+job. Certifications held: AWS Solutions Architect
+Professional, CKA, Terraform Associate, RHCE, CCNA.
+
+This project exists because support work alone does not
+prove build skill. It takes the exact work a PowerScale
+TSE does, file shares, quotas, ACLs, replication,
+checksum-verified integrity, cutovers, and rebuilds it
+as cloud infrastructure, with Terraform and Python,
+proven in CI. Target roles: Cloud Support Engineer,
+Cloud Operations, Storage and Platform Engineer.
+
+## What this proves for a cloud role
+
+| PowerScale TSE experience | Cloud proof in this repo |
+|---|---|
+| SyncIQ replication, datacenter exits | Python sync engine to S3, DataSync to FSx on real AWS, cutover runbook |
+| SmartQuotas, share quotas | Per-share quotas checked before any copy, DynamoDB audit per object |
+| SMB / NFS shares, ACLs | One S3 bucket per share, ACL-to-tag mapping, FSx as the file-system target |
+| OneFS Platform API, automation | Terraform for 41 AWS resources, boto3 sync and verify, Lambda validator |
+| High-severity incident handling | Corrupt-object drill: verify FAILs on exactly one file, re-sync repairs it |
+| Runbooks | `docs/CUTOVER_RUNBOOK.md`, failure drills, system design and ADRs |
+
 **For hiring managers and interviewers:** start at
 `docs/INTERVIEW_GUIDE.md`. It has the STAR bullet, the
 30-second pitch, and the ten questions you will be asked,
