@@ -1,0 +1,40 @@
+{
+  "backend": "Garage v1.3.0 S3-compatible disk-backed emulator (local), NOT real AWS",
+  "sync_seconds": 776.07,
+  "verify1_checked": 10024,
+  "verify1_mismatched": 0,
+  "verify1_passed": true,
+  "verify1_seconds": 271.19,
+  "corruptions_injected": 10,
+  "verify2_checked": 10024,
+  "verify2_mismatched": 10,
+  "verify2_passed": false,
+  "verify2_seconds": 275.54,
+  "repair_seconds": 264.77,
+  "verify3_checked": 10024,
+  "verify3_mismatched": 0,
+  "verify3_passed": true,
+  "verify3_seconds": 262.64,
+  "dataset_bin_bytes": 10485760000,
+  "throughput_mb_s": 13.51,
+  "objects_per_s": 12.9,
+  "initial_sync": {
+    "copied": 10024,
+    "bytes": 10486923264,
+    "seconds": 776.07
+  },
+  "repair_sync": {
+    "copied": 10,
+    "bytes": 10485760,
+    "unchanged": 10014,
+    "seconds": 264.77
+  },
+  "s3_cost_model_usd_estimate": {
+    "note": "list-price estimate us-west-2, interview numbers not resume claims",
+    "dataset_gb": 10.49,
+    "storage_per_month": 0.24,
+    "put_requests_10024": 0.05,
+    "get_requests_3x_verify": 0.01,
+    "first_month_total": 0.3
+  }
+}

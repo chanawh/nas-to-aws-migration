@@ -12,8 +12,11 @@ integrity. The lab is a scale model: 4 shares, 12 users, 24 files,
 or moto, no AWS account, no cloud bill. One real AWS run is
 under $1 for a day, see `docs/REAL_AWS_ONE_DAY.md`.
 
-**Honest limits, up front:** the dataset is 24 files, not 80 TB.
-LocalStack was not run live here, moto was. The Lambda function
+**Honest limits, up front:** the base dataset is 24 files, not
+80 TB; a scaled run migrated 10,024 objects / 10.49 GB through
+the same engine against a local disk-backed S3 emulator
+(Garage), see `docs/SCALED_RUN.md`. LocalStack was not run
+live here, moto was. The Lambda function
 was created in moto, its handler was tested directly, not by
 invoking through moto's Lambda mock. FSx, DataSync and CloudTrail
 are real-AWS only and gated off. This is a lab project, labelled
@@ -123,6 +126,8 @@ emulated at all. This project does not pretend otherwise.
 | `docker-compose.yml` | LocalStack 4.14.0, the primary emulator |
 | `scripts/start_moto.sh` | moto server, the no-Docker fallback used to run this in the VM |
 | `scripts/run_local_demo.sh` | Full live demo against moto: Terraform apply, sync, verify, corrupt, repair |
+| `scripts/run_scaled_demo.py` | Scaled run (default 10,000 x 1 MB files) against any S3 endpoint: sync, verify, corrupt, repair, JSON evidence |
+| `docs/SCALED_RUN.md` | The 2026-11-22 10 GB run: backend choice, timings, cost model |
 | `docs/CUTOVER_RUNBOOK.md` | The cutover procedure, step by step |
 | `docs/ONEFS_VIRTUAL_NODE.md` | The source side: OneFS Simulator virtual node in VMware Workstation Pro, mount, seed, migrate |
 | `python/migrate_s3/onefs.py` | OneFS bridge: check-onefs, mount/unmount, seed-onefs, mount-root validation |
@@ -239,6 +244,14 @@ rule in `terraform/s3.tf` is for.
   The Lambda function was created in moto; its handler was tested
   directly in the unit tests, not by invoking through moto's Lambda
   mock.
+- Scaled run, 2026-11-22: 10,024 objects / 10,486,923,264 bytes
+  synced through the unmodified engine against Garage v1.3.0
+  (local disk-backed S3 emulator, not real AWS): sync 776.07s
+  (13.5 MB/s local), verify PASS with zero mismatches, 10/10
+  injected corruptions detected, repair re-uploaded exactly
+  10, final verify PASS. Evidence in
+  `evidence/scaled-run-10gb-2026-11-22.json`, method in
+  `docs/SCALED_RUN.md`.
 - LocalStack 4.14.0: not run live in this VM (no Docker). The
   docker-compose file and the endpoint flag are written for it, and
   the S3 API calls are identical - but the first LocalStack run on
