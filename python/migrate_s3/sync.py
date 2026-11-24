@@ -14,12 +14,25 @@ Rules, in order:
 5. --delete removes objects that no longer exist in the source, but
    only when the flag is given. The default is to leave orphans.
 6. The manifest is one object per bucket, key _manifest.json.
+7. Parallelism (workers > 1): files in a share are uploaded by a
+   thread pool. Each thread gets its own boto3 client, because a
+   client must not be shared across threads for concurrent calls.
+   The unchanged check, read-back verification, quota pre-check
+   and manifest are identical to the sequential path; only the
+   per-file work runs concurrently, and results are merged in
+   sorted order so output is deterministic.
+8. Multipart: files >= 8 MiB upload via create_multipart_upload
+   (8 MiB parts), so a large file is one resumable upload instead
+   of one huge PUT. Files below the threshold use put_object.
+   Multipart uploads are aborted on failure, never left hanging.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -28,6 +41,8 @@ from botocore.exceptions import ClientError
 
 MANIFEST_KEY = "_manifest.json"
 CHUNK = 1024 * 1024
+MULTIPART_THRESHOLD = 8 * 1024 * 1024
+MULTIPART_PART_SIZE = 8 * 1024 * 1024
 
 
 @dataclass
@@ -135,6 +150,89 @@ def _object_sha256(s3, bucket: str, key: str) -> str | None:
         return None
 
 
+def _multipart_upload(s3, bucket: str, key: str, path: Path,
+                      metadata: dict, tagging: str) -> None:
+    """Upload a large file in 8 MiB parts. Aborts on failure."""
+    resp = s3.create_multipart_upload(
+        Bucket=bucket, Key=key, Metadata=metadata, Tagging=tagging)
+    upload_id = resp["UploadId"]
+    parts = []
+    try:
+        with path.open("rb") as f:
+            part_no = 1
+            while True:
+                data = f.read(MULTIPART_PART_SIZE)
+                if not data:
+                    break
+                p = s3.upload_part(Bucket=bucket, Key=key, PartNumber=part_no,
+                                   UploadId=upload_id, Body=data)
+                parts.append({"PartNumber": part_no, "ETag": p["ETag"]})
+                part_no += 1
+        s3.complete_multipart_upload(
+            Bucket=bucket, Key=key, UploadId=upload_id,
+            MultipartUpload={"Parts": parts})
+    except Exception:
+        try:
+            s3.abort_multipart_upload(Bucket=bucket, Key=key, UploadId=upload_id)
+        except ClientError:
+            pass
+        raise
+
+
+def _upload_file(s3, bucket: str, key: str, path: Path,
+                 metadata: dict, tagging: str) -> None:
+    """One upload, multipart for large files, put_object otherwise."""
+    if path.stat().st_size >= MULTIPART_THRESHOLD:
+        _multipart_upload(s3, bucket, key, path, metadata, tagging)
+    else:
+        s3.put_object(Bucket=bucket, Key=key, Body=path.read_bytes(),
+                      Metadata=metadata, Tagging=tagging)
+
+
+def _sync_one_file(args) -> tuple[str, str, int]:
+    """Per-file work for one share. Runs in a worker thread when
+    workers > 1, or inline when workers == 1. Returns
+    (rel, "copied" | "skipped", bytes_copied)."""
+    (client, source, bucket, rel, rec, manifest, target_before,
+     dry_run, acl_entry) = args
+    prior = manifest.get(rel)
+    # Unchanged means manifest matches AND the bytes in S3 still hash
+    # to the same value. A corrupted object falls through to re-upload.
+    if (
+        prior
+        and prior["size"] == rec.size
+        and prior["sha256"] == rec.sha256
+        and rel in target_before
+        and _object_sha256(client, bucket, rel) == rec.sha256
+    ):
+        return rel, "skipped", 0
+    if not dry_run:
+        metadata = {"sha256": rec.sha256}
+        tagging = f"sha256={rec.sha256}"
+        if acl_entry:
+            metadata["owner"] = acl_entry.get("owner", "")
+            metadata["nas-group"] = acl_entry.get("group", "")
+            tagging += f"&owner={acl_entry.get('owner', '')}&nas-group={acl_entry.get('group', '')}"
+        _upload_file(client, bucket, rel, source / rel, metadata, tagging)
+        # Read back the upload and verify it before claiming success.
+        if _object_sha256(client, bucket, rel) != rec.sha256:
+            raise IOError(f"upload verification failed for {rel}")
+    return rel, "copied", rec.size
+
+
+def _default_client_factory(s3):
+    """One boto3 client per thread, same endpoint/region/credentials
+    convention as the caller: env credentials, else the test pair
+    the emulator path uses. Callers with real credentials pass their
+    own client_factory instead."""
+    return lambda: boto3.client(
+        "s3", endpoint_url=s3.meta.endpoint_url,
+        region_name=s3.meta.region_name,
+        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", "test"),
+        aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", "test"),
+    )
+
+
 def sync_one_share(
     s3,
     source: Path,
@@ -144,6 +242,8 @@ def sync_one_share(
     delete: bool = False,
     quota_bytes: int | None = None,
     acl_entry: dict | None = None,
+    workers: int = 1,
+    client_factory=None,
 ) -> SyncResult:
     result = SyncResult(started_at=time.time())
     source_records = scan_directory(source)
@@ -157,38 +257,40 @@ def sync_one_share(
         return result
 
     new_manifest: dict[str, FileRecord] = {}
-    for rel, rec in source_records.items():
-        prior = manifest.get(rel)
-        # Unchanged means manifest matches AND the bytes in S3 still hash
-        # to the same value. A corrupted object falls through to re-upload.
-        if (
-            prior
-            and prior["size"] == rec.size
-            and prior["sha256"] == rec.sha256
-            and rel in target_before
-            and _object_sha256(s3, bucket, rel) == rec.sha256
-        ):
+    rels = sorted(source_records)
+    if workers and workers > 1:
+        factory = client_factory or _default_client_factory(s3)
+        # One client per thread: boto3 clients are not safe to share
+        # across threads for concurrent calls.
+        import threading
+        local = threading.local()
+
+        def get_client():
+            if not hasattr(local, "client"):
+                local.client = factory()
+            return local.client
+
+        def work(rel):
+            return _sync_one_file((get_client(), source, bucket, rel,
+                                   source_records[rel], manifest,
+                                   target_before, dry_run, acl_entry))
+
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            outcomes = list(pool.map(work, rels))
+    else:
+        outcomes = [
+            _sync_one_file((s3, source, bucket, rel, source_records[rel],
+                            manifest, target_before, dry_run, acl_entry))
+            for rel in rels
+        ]
+
+    for rel, status, nbytes in outcomes:
+        if status == "skipped":
             result.skipped_unchanged.append(rel)
-            new_manifest[rel] = rec
-            continue
-        if not dry_run:
-            metadata = {"sha256": rec.sha256}
-            tagging = f"sha256={rec.sha256}"
-            if acl_entry:
-                metadata["owner"] = acl_entry.get("owner", "")
-                metadata["nas-group"] = acl_entry.get("group", "")
-                tagging += f"&owner={acl_entry.get('owner', '')}&nas-group={acl_entry.get('group', '')}"
-            s3.put_object(
-                Bucket=bucket, Key=rel,
-                Body=(source / rel).read_bytes(),
-                Metadata=metadata, Tagging=tagging,
-            )
-            # Read back the upload and verify it before claiming success.
-            if _object_sha256(s3, bucket, rel) != rec.sha256:
-                raise IOError(f"upload verification failed for {rel}")
-        result.copied.append(rel)
-        result.bytes_copied += rec.size
-        new_manifest[rel] = rec
+        else:
+            result.copied.append(rel)
+            result.bytes_copied += nbytes
+        new_manifest[rel] = source_records[rel]
 
     if delete:
         for rel in sorted(target_before):
@@ -213,6 +315,8 @@ def sync_all(
     delete: bool = False,
     quotas: dict[str, int] | None = None,
     acl_map: dict[str, dict] | None = None,
+    workers: int = 1,
+    client_factory=None,
 ) -> dict[str, SyncResult]:
     quotas = quotas or {}
     acl_map = acl_map or {}
@@ -223,5 +327,6 @@ def sync_all(
             dry_run=dry_run, delete=delete,
             quota_bytes=quotas.get(share_dir.name),
             acl_entry=acl_map.get(share_dir.name),
+            workers=workers, client_factory=client_factory,
         )
     return results

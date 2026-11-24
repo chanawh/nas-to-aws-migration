@@ -1,10 +1,11 @@
 # NAS-to-AWS migration factory, common commands.
 # Run `make help` for the list.
 
-.PHONY: help test fmt validate demo clean
+.PHONY: help test test-blob fmt validate demo clean
 
 help:
-	@echo "make test      run the 22 unit tests"
+	@echo "make test      run the 25 S3 unit tests"
+@echo "make test-blob run the 9 Azure Blob tests (Azurite must be running)"
 	@echo "make fmt       check Terraform formatting"
 	@echo "make validate  validate Terraform"
 	@echo "make demo      run the full moto demo end to end"
@@ -12,6 +13,9 @@ help:
 
 test:
 	cd python && python3 -m unittest discover -s tests -v
+
+test-blob:
+	cd python && $(HOME)/workspace/nas-to-aws-migration-venv-azure/bin/python -m unittest discover -s tests -p "test_blob_sync.py" -v
 
 fmt:
 	cd terraform && terraform fmt -check

@@ -20,6 +20,9 @@ resource "aws_s3_bucket" "shares" {
   # itself, or destroy fails with BucketNotEmpty after a sync. On real
   # AWS this is false, so a destroy refuses to delete data.
   force_destroy = var.use_emulator
+  # Object Lock is a create-time property. Enabling it later recreates
+  # the bucket, so it is gated behind enable_object_lock (default off).
+  object_lock_enabled = var.enable_object_lock
 }
 
 resource "aws_s3_bucket_versioning" "shares" {
@@ -76,6 +79,26 @@ resource "aws_s3_bucket_lifecycle_configuration" "shares" {
 
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
+    }
+  }
+}
+
+# Ransomware protection, real-AWS-only. GOVERNANCE mode: the object
+# cannot be deleted or overwritten until retention expires, but an
+# admin with s3:BypassGovernanceRetention can still remove it, which
+# is the intended break-glass. COMPLIANCE mode would remove even
+# that, and is a separate decision. Neither moto nor Garage enforces
+# this (verified 2026-11-24: moto accepts the config and still
+# allows the delete; Garage returns NotImplemented), so the config
+# is validated by terraform plan only until a real AWS apply.
+resource "aws_s3_bucket_object_lock_configuration" "shares" {
+  for_each = var.enable_object_lock ? aws_s3_bucket.shares : {}
+  bucket   = each.value.id
+
+  rule {
+    default_retention {
+      mode = "GOVERNANCE"
+      days = 30
     }
   }
 }

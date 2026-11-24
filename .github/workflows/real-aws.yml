@@ -1,0 +1,77 @@
+# Real-AWS runs via GitHub OIDC (no static keys)
+#
+# Manual-only workflow: runs the throughput benchmark and the
+# failure drills against a REAL AWS account, using OpenID
+# Connect so no long-lived access key ever exists in GitHub.
+#
+# UNTESTED against real AWS: no AWS account exists in this
+# environment, so this workflow has never run. Do not claim it
+# works until it has run green once. Setup is documented in
+# docs/REAL_AWS_ONE_DAY.md (OIDC section).
+#
+# What it runs: the same scripts as the emulator runs, with no
+# endpoint URL (endpoint = real AWS) and credentials from the
+# OIDC-assumed role. The drills that need a real backend (KMS
+# denial, genuine throttling, Object Lock enforcement) only
+# produce real results here.
+#
+# This workflow is separate from ci.yml on purpose: ci.yml
+# stays $0 and green on every push with no account. This one
+# only runs when a human dispatches it.
+name: real-aws
+
+on:
+  workflow_dispatch:
+    inputs:
+      workers:
+        description: "Worker counts for the throughput run, space separated"
+        default: "1 4 8"
+        required: false
+      per_share:
+        description: "Scale files per share for the throughput run"
+        default: "100"
+        required: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  real-aws-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python deps
+        run: |
+          python -m venv /tmp/venv
+          /tmp/venv/bin/pip install -q boto3 "moto[server]"
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: us-west-2
+      - name: Throughput benchmark (real S3)
+        run: |
+          /tmp/venv/bin/python scripts/run_throughput.py \
+            --source /tmp/nas2aws-throughput/source \
+            --per-share "${{ inputs.per_share }}" --file-mb 1 \
+            --workers ${{ inputs.workers }} \
+            --out evidence/throughput-real-aws-$(date +%F).json
+        env:
+          S3_ENDPOINT: ""
+          S3_BACKEND_LABEL: "real AWS S3 (us-west-2)"
+      - name: Failure drills (real S3)
+        run: |
+          /tmp/venv/bin/python scripts/drills/run_all.py --runs 3 \
+            --out evidence/failure-matrix-real-aws-$(date +%F).json
+        env:
+          S3_ENDPOINT: ""
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-aws-evidence
+          path: evidence/*real-aws*.json

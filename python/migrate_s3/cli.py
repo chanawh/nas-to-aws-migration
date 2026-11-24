@@ -172,6 +172,7 @@ def _cmd_sync(args) -> int:
             s3, source, args.bucket_prefix,
             dry_run=args.dry_run, delete=args.delete,
             quotas=quotas, acl_map=acl_map,
+            workers=getattr(args, "workers", 1),
         )
     except Exception as e:
         print(f"error: sync failed: {e}", file=sys.stderr)
@@ -261,6 +262,8 @@ def main(argv=None) -> int:
     p_sync.add_argument("--source", required=True)
     p_sync.add_argument("--dry-run", action="store_true")
     p_sync.add_argument("--delete", action="store_true")
+    p_sync.add_argument("--workers", type=int, default=1,
+                        help="Upload threads per share (default 1 = sequential)")
     _add_common(p_sync)
     _add_source(p_sync)
     p_sync.set_defaults(func=_cmd_sync)

@@ -35,6 +35,31 @@ until an interviewer asks for it.
    The $1 KMS key is the only thing that bills monthly, and
    destroying the stack deletes it.
 
+## GitHub OIDC (no static keys)
+
+The `real-aws` workflow (`.github/workflows/real-aws.yml`)
+runs the throughput benchmark and the failure drills against
+real S3 without a long-lived access key. Setup, once, in the
+AWS account:
+
+1. In IAM, create an OIDC identity provider for
+   `token.actions.githubusercontent.com` (audience `sts.amazonaws.com`).
+2. Create a role with a trust policy that only allows this
+   repo (`repo:chanawh/nas-to-aws-migration:ref:refs/heads/main`
+   for dispatch runs, or the specific workflow file) to assume
+   it, with a policy limited to the four `nas2aws-migration-*`
+   buckets, the KMS key, and CloudWatch Logs.
+3. In the repo, set the repository variable `AWS_OIDC_ROLE_ARN`
+   to the role ARN (Settings > Secrets and variables > Actions >
+   Variables). Never put the role ARN in a file.
+4. Dispatch the workflow from the Actions tab (workflow_dispatch).
+
+The workflow is UNTESTED: it has never run against real AWS,
+because no account exists in this environment. The first green
+run is the evidence; until then it is a script, not a result.
+It does not touch `ci.yml`, which stays $0 and green on every
+push with no account.
+
 ## After the run
 
 Update the resume bullet: replace "in a local AWS emulator

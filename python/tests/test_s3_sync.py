@@ -130,6 +130,54 @@ class TestS3Sync(unittest.TestCase):
             manifest = load_manifest(self.s3, f"{PREFIX}-finance")
             self.assertEqual(len(manifest), 6)
 
+    def test_parallel_sync_matches_sequential(self):
+        with tempfile.TemporaryDirectory() as d:
+            source = _make_source(Path(d))
+            seq = sync_all(self.s3, source, PREFIX)
+            # Wipe the buckets and re-run with 4 workers: same result.
+            for share in SHARES:
+                for o in self.s3.list_objects_v2(Bucket=f"{PREFIX}-{share}").get("Contents", []):
+                    self.s3.delete_object(Bucket=f"{PREFIX}-{share}", Key=o["Key"])
+            par = sync_all(self.s3, source, PREFIX, workers=4)
+            self.assertEqual(
+                {k: sorted(v.copied) for k, v in par.items()},
+                {k: sorted(v.copied) for k, v in seq.items()})
+            self.assertEqual(
+                {k: v.bytes_copied for k, v in par.items()},
+                {k: v.bytes_copied for k, v in seq.items()})
+            for share in SHARES:
+                self.assertTrue(verify(self.s3, source / share, f"{PREFIX}-{share}").passed)
+
+    def test_parallel_second_sync_is_noop_and_repairs_corruption(self):
+        with tempfile.TemporaryDirectory() as d:
+            source = _make_source(Path(d))
+            sync_all(self.s3, source, PREFIX, workers=4)
+            again = sync_all(self.s3, source, PREFIX, workers=4)
+            self.assertEqual(sum(len(r.copied) for r in again.values()), 0)
+            self.assertEqual(sum(len(r.skipped_unchanged) for r in again.values()), 24)
+            self.s3.put_object(
+                Bucket=f"{PREFIX}-finance", Key="budget-2027-draft.csv",
+                Body=b"corrupted\n",
+            )
+            sync_all(self.s3, source, PREFIX, workers=4)
+            self.assertTrue(verify(self.s3, source / "finance", f"{PREFIX}-finance").passed)
+
+    def test_large_file_uses_multipart_and_verifies(self):
+        with tempfile.TemporaryDirectory() as d:
+            source = _make_source(Path(d))
+            big = source / "finance" / "big-9mb.bin"
+            big.write_bytes(b"A" * (9 * 1024 * 1024))
+            sync_all(self.s3, source, PREFIX, workers=4)
+            obj = self.s3.get_object(Bucket=f"{PREFIX}-finance", Key="big-9mb.bin")
+            import hashlib
+            self.assertEqual(
+                hashlib.sha256(obj["Body"].read()).hexdigest(),
+                obj["Metadata"]["sha256"])
+            self.assertTrue(verify(self.s3, source / "finance", f"{PREFIX}-finance").passed)
+            # No multipart upload left hanging.
+            self.assertEqual(
+                self.s3.list_multipart_uploads(Bucket=f"{PREFIX}-finance").get("Uploads", []), [])
+
 
 if __name__ == "__main__":
     unittest.main()

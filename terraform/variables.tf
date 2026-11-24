@@ -59,6 +59,12 @@ variable "glacier_after_days" {
   default     = 90
 }
 
+variable "enable_object_lock" {
+  description = "Enable S3 Object Lock (GOVERNANCE, 30-day retention) on the share buckets. This is the ransomware protection for the drill in scripts/drills/ransomware.py: a locked object cannot be deleted or overwritten until retention expires. Default false: Object Lock can only be enabled at bucket creation, so turning it on recreates the buckets, and neither moto nor Garage enforces it (verified 2026-11-24), so lock enforcement is real-AWS-only."
+  type        = bool
+  default     = false
+}
+
 variable "alert_email" {
   description = "Email for SNS verify-failure and alarm alerts. Empty means no email subscription - the topic still exists, and alerts are visible in the console / via the CLI."
   type        = string

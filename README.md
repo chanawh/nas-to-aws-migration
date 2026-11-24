@@ -22,6 +22,32 @@ invoking through moto's Lambda mock. FSx, DataSync and CloudTrail
 are real-AWS only and gated off. This is a lab project, labelled
 as one, and the Terraform is the same code as a real AWS run.
 
+## Reviewer path (5 minutes)
+
+1. Results table below. 2. Failure matrix,
+   `docs/FAILURE_MATRIX.md`. 3. `docs/adr/0002-sha256-not-etag.md`
+   (why SHA-256, not ETags). 4. `docs/COST.md` (list-price model,
+   no real spend yet). 5. Any runbook in `docs/`.
+
+## Results (measured)
+
+| Metric | Result | Evidence |
+|---|---|---|
+| Scale run | 10,024 objects / 10.49 GB to Garage S3 emulator, 13.5 MB/s single-threaded | `evidence/scaled-run-10gb-2026-11-22.json` |
+| Parallel throughput | 1 worker 17.57 MB/s median; 4 workers 19.77 MB/s (1.13x); 8 workers 17.32 MB/s (~1.0x) | `evidence/throughput-2026-11-24.json` |
+| Failure matrix | 6 drills, 3 runs each, all detected and recovered | `evidence/failure-matrix-2026-11-24.json` |
+| Ransomware drill | 10 overwritten + 10 deleted of 24; all 20 restored, 0 data loss | same file, `ransomware` drill |
+| Azure Blob side | Blob engine 9/9 tests; 6 drills, 3 runs each, all detected and recovered (Azurite) | `evidence/azure-failure-matrix-2026-11-24.json`, `docs/AZURE_BLOB.md` |
+| Integrity | 0 mismatches on every verify; 10/10 injected corruptions detected and repaired | `evidence/scaled-run-10gb-2026-11-22.json` |
+| Cost | list-price model only; no real AWS spend exists | `docs/COST.md` |
+
+The parallel number is the honest one, not the hoped-for one:
+on the local emulator parallelism buys ~13% at 4 workers and
+nothing at 8 — the bottleneck is the emulator, not the client.
+See `docs/THROUGHPUT.md`. Real-S3 numbers are pending a real
+AWS run; the OIDC workflow (`.github/workflows/real-aws.yml`)
+is written but untested.
+
 ```mermaid
 flowchart LR
     OneFS[OneFS SMB\nfinance, it-support,\nit-operations, operations]
@@ -227,8 +253,24 @@ rule in `terraform/s3.tf` is for.
 
 ## What was run live, and what was not
 
-- Python engine: 22/22 tests pass live, moto in-process mock, Python
-  3.12.3, boto3 1.44.6 (10 S3 sync, 8 OneFS, 4 new services).
+- Python engine: 25/25 S3 tests pass live, moto in-process mock, Python
+  3.12.3, boto3 1.44.6 (13 S3 sync incl. parallel + multipart, 8 OneFS, 4 new services).
+- Azure Blob engine: 9/9 tests pass live against Azurite 3.38.0
+  (azure-storage-blob 12.31.1), plus 6 Blob drills 3/3 — see
+  `docs/AZURE_BLOB.md` and
+  `evidence/azure-failure-matrix-2026-11-24.json`. Soft delete,
+  immutability, genuine throttling, and Terraform apply are
+  real-Azure-only.
+- Parallel sync (v1.2.0): `--workers` on the CLI, multipart upload
+  for files >= 8 MiB. Measured on Garage: 1.13x at 4 workers,
+  ~1.0x at 8 — see `docs/THROUGHPUT.md` and
+  `evidence/throughput-2026-11-24.json`.
+- Failure drills (v1.2.0): six failure classes + ransomware, each
+  run 3 times, all detected and recovered — see
+  `docs/FAILURE_MATRIX.md` and
+  `evidence/failure-matrix-2026-11-24.json`. KMS denial and
+  genuine throttling are simulated (the emulators do not produce
+  them); Object Lock enforcement is real-AWS-only.
 - Terraform + CLI end to end: run live against a moto server on
   :5000 in this VM (Docker is not installed here, so LocalStack
   itself was not run live here). `terraform fmt`, `validate`, `plan`

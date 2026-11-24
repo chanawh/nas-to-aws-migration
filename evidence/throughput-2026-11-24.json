@@ -1,0 +1,66 @@
+{
+  "backend": "Garage v1.3.0 (local disk-backed emulator)",
+  "dataset": {
+    "files": 424,
+    "per_share": 100,
+    "file_mb": 1,
+    "bytes": 420593664
+  },
+  "runs": [
+    {
+      "workers": 1,
+      "seconds": 24.5,
+      "copied": 424,
+      "bytes": 420593664,
+      "mb_s": 17.17,
+      "objects_per_s": 17.3
+    },
+    {
+      "workers": 1,
+      "seconds": 23.41,
+      "copied": 424,
+      "bytes": 420593664,
+      "mb_s": 17.97,
+      "objects_per_s": 18.1
+    },
+    {
+      "workers": 4,
+      "seconds": 21.27,
+      "copied": 424,
+      "bytes": 420593664,
+      "mb_s": 19.77,
+      "objects_per_s": 19.9
+    },
+    {
+      "workers": 8,
+      "seconds": 20.65,
+      "copied": 424,
+      "bytes": 420593664,
+      "mb_s": 20.37,
+      "objects_per_s": 20.5
+    },
+    {
+      "workers": 8,
+      "seconds": 29.47,
+      "copied": 424,
+      "bytes": 420593664,
+      "mb_s": 14.27,
+      "objects_per_s": 14.4
+    }
+  ],
+  "verify_after_last_run": {
+    "checked": 424,
+    "mismatched": 0,
+    "passed": true
+  },
+  "median_mb_s_by_workers": {
+    "1": 17.57,
+    "4": 19.77,
+    "8": 17.32
+  },
+  "speedup_vs_1_worker": {
+    "workers": 4,
+    "median_mb_s": 19.77,
+    "factor": 1.13
+  }
+}
