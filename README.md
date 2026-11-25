@@ -40,6 +40,7 @@ as one, and the Terraform is the same code as a real AWS run.
 | Azure Blob side | Blob engine 9/9 tests; 6 drills, 3 runs each, all detected and recovered (Azurite) | `evidence/azure-failure-matrix-2026-11-24.json`, `docs/AZURE_BLOB.md` |
 | Integrity | 0 mismatches on every verify; 10/10 injected corruptions detected and repaired | `evidence/scaled-run-10gb-2026-11-22.json` |
 | Cost | list-price model only; no real AWS spend exists | `docs/COST.md` |
+| Real-cloud drill readiness (v1.2.1) | drills take real paths on real AWS/Azure with dynamic backend labels (no stub on real cloud); OIDC workflow dispatch is the primary path | `docs/REAL_AWS_ONE_DAY.md`, `docs/AZURE_BLOB.md`, `.github/workflows/real-aws.yml` |
 
 The parallel number is the honest one, not the hoped-for one:
 on the local emulator parallelism buys ~13% at 4 workers and
