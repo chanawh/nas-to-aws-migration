@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-24",
+  "date": "2026-11-25",
   "backend_notes": {
     "Garage v1.3.0": "local disk-backed S3 emulator; no KMS, no versioning, no Object Lock",
     "moto 5.2.5": "in-process mock; versioning works, KMS key state and Object Lock not enforced",
@@ -10,9 +10,9 @@
       "drill": "expired_credentials",
       "backend": "Garage v1.3.0",
       "detected": true,
-      "detect_seconds": 0.03,
+      "detect_seconds": 0.168,
       "recovered": true,
-      "recover_seconds": 0.088,
+      "recover_seconds": 0.09,
       "simulated": false,
       "detail": "list_buckets failed with AccessDenied",
       "runs": [
@@ -20,9 +20,9 @@
           "drill": "expired_credentials",
           "backend": "Garage v1.3.0",
           "detected": true,
-          "detect_seconds": 0.03,
+          "detect_seconds": 0.168,
           "recovered": true,
-          "recover_seconds": 0.088,
+          "recover_seconds": 0.09,
           "simulated": false,
           "detail": "list_buckets failed with AccessDenied"
         },
@@ -30,9 +30,9 @@
           "drill": "expired_credentials",
           "backend": "Garage v1.3.0",
           "detected": true,
-          "detect_seconds": 0.009,
+          "detect_seconds": 0.011,
           "recovered": true,
-          "recover_seconds": 0.017,
+          "recover_seconds": 0.015,
           "simulated": false,
           "detail": "list_buckets failed with AccessDenied"
         },
@@ -40,15 +40,15 @@
           "drill": "expired_credentials",
           "backend": "Garage v1.3.0",
           "detected": true,
-          "detect_seconds": 0.007,
+          "detect_seconds": 0.008,
           "recovered": true,
-          "recover_seconds": 0.01,
+          "recover_seconds": 0.019,
           "simulated": false,
           "detail": "list_buckets failed with AccessDenied"
         }
       ],
-      "median_detect_seconds": 0.009,
-      "median_recover_seconds": 0.017,
+      "median_detect_seconds": 0.011,
+      "median_recover_seconds": 0.019,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -102,7 +102,7 @@
       "drill": "dns_endpoint_failure",
       "backend": "client-side",
       "detected": true,
-      "detect_seconds": 0.102,
+      "detect_seconds": 0.16,
       "recovered": true,
       "recover_seconds": 0.011,
       "simulated": false,
@@ -112,7 +112,7 @@
           "drill": "dns_endpoint_failure",
           "backend": "client-side",
           "detected": true,
-          "detect_seconds": 0.102,
+          "detect_seconds": 0.16,
           "recovered": true,
           "recover_seconds": 0.011,
           "simulated": false,
@@ -122,9 +122,9 @@
           "drill": "dns_endpoint_failure",
           "backend": "client-side",
           "detected": true,
-          "detect_seconds": 0.088,
+          "detect_seconds": 0.115,
           "recovered": true,
-          "recover_seconds": 0.201,
+          "recover_seconds": 0.206,
           "simulated": false,
           "detail": "http://127.0.0.1:9: no response (connection/DNS failure); http://nonexistent.invalid: no response (connection/DNS failure); recovery is the same call against the healthy endpoint"
         },
@@ -132,15 +132,15 @@
           "drill": "dns_endpoint_failure",
           "backend": "client-side",
           "detected": true,
-          "detect_seconds": 0.062,
+          "detect_seconds": 0.085,
           "recovered": true,
-          "recover_seconds": 0.014,
+          "recover_seconds": 0.012,
           "simulated": false,
           "detail": "http://127.0.0.1:9: no response (connection/DNS failure); http://nonexistent.invalid: no response (connection/DNS failure); recovery is the same call against the healthy endpoint"
         }
       ],
-      "median_detect_seconds": 0.088,
-      "median_recover_seconds": 0.014,
+      "median_detect_seconds": 0.115,
+      "median_recover_seconds": 0.012,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -150,7 +150,7 @@
       "detected": true,
       "detect_seconds": 0.303,
       "recovered": true,
-      "recover_seconds": 0.301,
+      "recover_seconds": 0.234,
       "simulated": true,
       "detail": "stubbed SlowDown x2 then success in 3 attempts; live burst of 50 parallel puts: 0 throttled, 0 failed. Genuine throttling is real-AWS-only.",
       "runs": [
@@ -160,7 +160,7 @@
           "detected": true,
           "detect_seconds": 0.303,
           "recovered": true,
-          "recover_seconds": 0.301,
+          "recover_seconds": 0.234,
           "simulated": true,
           "detail": "stubbed SlowDown x2 then success in 3 attempts; live burst of 50 parallel puts: 0 throttled, 0 failed. Genuine throttling is real-AWS-only."
         },
@@ -170,7 +170,7 @@
           "detected": true,
           "detect_seconds": 0.303,
           "recovered": true,
-          "recover_seconds": 0.255,
+          "recover_seconds": 0.152,
           "simulated": true,
           "detail": "stubbed SlowDown x2 then success in 3 attempts; live burst of 50 parallel puts: 0 throttled, 0 failed. Genuine throttling is real-AWS-only."
         },
@@ -180,13 +180,13 @@
           "detected": true,
           "detect_seconds": 0.303,
           "recovered": true,
-          "recover_seconds": 0.282,
+          "recover_seconds": 0.161,
           "simulated": true,
           "detail": "stubbed SlowDown x2 then success in 3 attempts; live burst of 50 parallel puts: 0 throttled, 0 failed. Genuine throttling is real-AWS-only."
         }
       ],
       "median_detect_seconds": 0.303,
-      "median_recover_seconds": 0.282,
+      "median_recover_seconds": 0.161,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -194,9 +194,9 @@
       "drill": "interrupted_multipart",
       "backend": "Garage v1.3.0",
       "detected": true,
-      "detect_seconds": 0.012,
+      "detect_seconds": 0.009,
       "recovered": true,
-      "recover_seconds": 0.253,
+      "recover_seconds": 0.169,
       "simulated": false,
       "detail": "orphan upload listed: True, object visible before completion: False; resumed upload SHA-256 matches: True",
       "runs": [
@@ -204,9 +204,9 @@
           "drill": "interrupted_multipart",
           "backend": "Garage v1.3.0",
           "detected": true,
-          "detect_seconds": 0.012,
+          "detect_seconds": 0.009,
           "recovered": true,
-          "recover_seconds": 0.253,
+          "recover_seconds": 0.169,
           "simulated": false,
           "detail": "orphan upload listed: True, object visible before completion: False; resumed upload SHA-256 matches: True"
         },
@@ -216,7 +216,7 @@
           "detected": true,
           "detect_seconds": 0.011,
           "recovered": true,
-          "recover_seconds": 0.275,
+          "recover_seconds": 0.182,
           "simulated": false,
           "detail": "orphan upload listed: True, object visible before completion: False; resumed upload SHA-256 matches: True"
         },
@@ -224,15 +224,15 @@
           "drill": "interrupted_multipart",
           "backend": "Garage v1.3.0",
           "detected": true,
-          "detect_seconds": 0.011,
+          "detect_seconds": 0.01,
           "recovered": true,
-          "recover_seconds": 0.264,
+          "recover_seconds": 0.17,
           "simulated": false,
           "detail": "orphan upload listed: True, object visible before completion: False; resumed upload SHA-256 matches: True"
         }
       ],
-      "median_detect_seconds": 0.011,
-      "median_recover_seconds": 0.264,
+      "median_detect_seconds": 0.01,
+      "median_recover_seconds": 0.17,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -240,45 +240,45 @@
       "drill": "silent_corruption",
       "backend": "Garage v1.3.0",
       "detected": true,
-      "detect_seconds": 0.598,
+      "detect_seconds": 0.562,
       "recovered": true,
-      "recover_seconds": 1.419,
+      "recover_seconds": 1.351,
       "simulated": false,
-      "detail": "3 objects corrupted in 0.015s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True",
+      "detail": "3 objects corrupted in 0.011s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True",
       "runs": [
         {
           "drill": "silent_corruption",
           "backend": "Garage v1.3.0",
           "detected": true,
-          "detect_seconds": 0.598,
+          "detect_seconds": 0.562,
           "recovered": true,
-          "recover_seconds": 1.419,
+          "recover_seconds": 1.351,
           "simulated": false,
-          "detail": "3 objects corrupted in 0.015s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
+          "detail": "3 objects corrupted in 0.011s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
         },
         {
           "drill": "silent_corruption",
           "backend": "Garage v1.3.0",
           "detected": true,
-          "detect_seconds": 0.601,
+          "detect_seconds": 0.571,
           "recovered": true,
-          "recover_seconds": 1.431,
+          "recover_seconds": 1.353,
           "simulated": false,
-          "detail": "3 objects corrupted in 0.023s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
+          "detail": "3 objects corrupted in 0.012s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
         },
         {
           "drill": "silent_corruption",
           "backend": "Garage v1.3.0",
           "detected": true,
-          "detect_seconds": 0.586,
+          "detect_seconds": 0.56,
           "recovered": true,
-          "recover_seconds": 1.438,
+          "recover_seconds": 1.366,
           "simulated": false,
-          "detail": "3 objects corrupted in 0.021s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
+          "detail": "3 objects corrupted in 0.01s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
         }
       ],
-      "median_detect_seconds": 0.598,
-      "median_recover_seconds": 1.431,
+      "median_detect_seconds": 0.562,
+      "median_recover_seconds": 1.353,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -288,15 +288,15 @@
       "objects_total": 24,
       "objects_overwritten": 10,
       "objects_deleted": 10,
-      "attack_seconds": 0.051,
+      "attack_seconds": 0.041,
       "detected": true,
-      "detect_seconds": 0.065,
+      "detect_seconds": 0.052,
       "recovered": true,
-      "recover_seconds": 0.249,
+      "recover_seconds": 0.186,
       "objects_restored": 20,
       "data_loss_objects": 0,
       "simulated": false,
-      "detail": "attack overwrote 10 and deleted 10 of 24 objects in 0.051s; verify found all 20; restored 20 in 0.249s, final verify passed: True, data loss: 0 objects. Object Lock config accepted but delete ALLOWED on moto (not enforced); lock enforcement is real-AWS-only.",
+      "detail": "attack overwrote 10 and deleted 10 of 24 objects in 0.041s; verify found all 20; restored 20 in 0.186s, final verify passed: True, data loss: 0 objects. Object Lock config accepted but delete ALLOWED (not enforced); lock enforcement is real-AWS-only.",
       "runs": [
         {
           "drill": "ransomware",
@@ -304,15 +304,15 @@
           "objects_total": 24,
           "objects_overwritten": 10,
           "objects_deleted": 10,
-          "attack_seconds": 0.051,
+          "attack_seconds": 0.041,
           "detected": true,
-          "detect_seconds": 0.065,
+          "detect_seconds": 0.052,
           "recovered": true,
-          "recover_seconds": 0.249,
+          "recover_seconds": 0.186,
           "objects_restored": 20,
           "data_loss_objects": 0,
           "simulated": false,
-          "detail": "attack overwrote 10 and deleted 10 of 24 objects in 0.051s; verify found all 20; restored 20 in 0.249s, final verify passed: True, data loss: 0 objects. Object Lock config accepted but delete ALLOWED on moto (not enforced); lock enforcement is real-AWS-only."
+          "detail": "attack overwrote 10 and deleted 10 of 24 objects in 0.041s; verify found all 20; restored 20 in 0.186s, final verify passed: True, data loss: 0 objects. Object Lock config accepted but delete ALLOWED (not enforced); lock enforcement is real-AWS-only."
         },
         {
           "drill": "ransomware",
@@ -320,15 +320,15 @@
           "objects_total": 24,
           "objects_overwritten": 10,
           "objects_deleted": 10,
-          "attack_seconds": 0.049,
+          "attack_seconds": 0.04,
           "detected": true,
-          "detect_seconds": 0.062,
+          "detect_seconds": 0.053,
           "recovered": true,
-          "recover_seconds": 0.215,
+          "recover_seconds": 0.184,
           "objects_restored": 20,
           "data_loss_objects": 0,
           "simulated": false,
-          "detail": "attack overwrote 10 and deleted 10 of 24 objects in 0.049s; verify found all 20; restored 20 in 0.215s, final verify passed: True, data loss: 0 objects. Object Lock config accepted but delete ALLOWED on moto (not enforced); lock enforcement is real-AWS-only."
+          "detail": "attack overwrote 10 and deleted 10 of 24 objects in 0.04s; verify found all 20; restored 20 in 0.184s, final verify passed: True, data loss: 0 objects. Object Lock config accepted but delete ALLOWED (not enforced); lock enforcement is real-AWS-only."
         },
         {
           "drill": "ransomware",
@@ -336,19 +336,19 @@
           "objects_total": 24,
           "objects_overwritten": 10,
           "objects_deleted": 10,
-          "attack_seconds": 0.067,
+          "attack_seconds": 0.053,
           "detected": true,
-          "detect_seconds": 0.063,
+          "detect_seconds": 0.053,
           "recovered": true,
-          "recover_seconds": 0.226,
+          "recover_seconds": 0.186,
           "objects_restored": 20,
           "data_loss_objects": 0,
           "simulated": false,
-          "detail": "attack overwrote 10 and deleted 10 of 24 objects in 0.067s; verify found all 20; restored 20 in 0.226s, final verify passed: True, data loss: 0 objects. Object Lock config accepted but delete ALLOWED on moto (not enforced); lock enforcement is real-AWS-only."
+          "detail": "attack overwrote 10 and deleted 10 of 24 objects in 0.053s; verify found all 20; restored 20 in 0.186s, final verify passed: True, data loss: 0 objects. Object Lock config accepted but delete ALLOWED (not enforced); lock enforcement is real-AWS-only."
         }
       ],
-      "median_detect_seconds": 0.063,
-      "median_recover_seconds": 0.226,
+      "median_detect_seconds": 0.053,
+      "median_recover_seconds": 0.186,
       "detected_runs": 3,
       "recovered_runs": 3
     }

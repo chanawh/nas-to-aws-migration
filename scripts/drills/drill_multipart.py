@@ -16,7 +16,8 @@ from pathlib import Path
 
 from botocore.exceptions import ClientError
 
-from common import BUCKET_PREFIX, empty_bucket, ensure_buckets, garage_client
+from common import (BUCKET_PREFIX, backend_label, empty_bucket,
+                    ensure_buckets, garage_client)
 
 PART = 8 * 1024 * 1024
 KEY = "interrupted-9mb.bin"
@@ -66,7 +67,7 @@ def run_once():
     recovered = got == want and not left
     recover_s = round(time.time() - t0, 3)
 
-    return {"drill": "interrupted_multipart", "backend": "Garage v1.3.0",
+    return {"drill": "interrupted_multipart", "backend": backend_label("Garage v1.3.0"),
             "detected": detected, "detect_seconds": detect_s,
             "recovered": recovered, "recover_seconds": recover_s,
             "simulated": False,

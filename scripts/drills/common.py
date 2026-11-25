@@ -36,6 +36,21 @@ def garage_client():
         config=Config(s3={"addressing_style": "path"}))
 
 
+def is_real_aws():
+    """True when no S3_ENDPOINT is set: boto3 talks to real AWS,
+    not to moto or Garage. Every drill branches on this."""
+    return not os.environ.get("S3_ENDPOINT")
+
+
+def backend_label(emulator_label):
+    """Honest backend label for evidence. On real AWS the label
+    must say so; on an emulator it keeps the emulator's name.
+    Hardcoding an emulator name here would mislabel a real run."""
+    if is_real_aws():
+        return f"real AWS S3 ({os.environ.get('AWS_REGION', 'us-west-2')})"
+    return emulator_label
+
+
 def empty_bucket(s3, bucket):
     paginator = s3.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=bucket):

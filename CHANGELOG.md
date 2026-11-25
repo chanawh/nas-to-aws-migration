@@ -1,5 +1,41 @@
 # Changelog
 
+## v1.2.1, 2026-11-24
+
+Real-cloud measurement, no new emulator numbers. The v1.2.0
+drills measured on emulators only and could not measure
+genuinely on real cloud as written; v1.2.1 fixes that.
+scripts/drills/common.py gains is_real_aws() (S3_ENDPOINT
+unset) and backend_label() (returns "real AWS S3 (us-west-2)"
+on real AWS, the emulator label otherwise), used by all
+seven S3 drills. drill_kms.py: on real AWS it creates a KMS
+key, disables it, measures the genuine KMSInvalidStateException,
+and recovers with a second enabled key; both keys scheduled
+for deletion. drill_throttle.py: on real AWS a 32 x 200 burst
+against one prefix counts genuine 503 SlowDown responses;
+simulated=False only if a genuine 503 was seen, otherwise
+the drill reports no throttling honestly. ransomware.py: on
+real AWS it runs against the real buckets (versioning from
+Terraform) and the Object Lock probe genuinely tests
+enforcement (probe bucket left with one 1-day-retained object).
+Azure: scripts/azure/drills/common.py reads
+AZURE_BLOB_ENDPOINT / AZURE_STORAGE_ACCOUNT_NAME /
+AZURE_STORAGE_KEY, Azurite is the default when unset, BACKEND
+is "real Azure Blob" when a real account is configured; all
+six Azure drills use the env-aware client, and the throttle
+drill has the same real burst mode (genuine 503 ServerBusy).
+Fixed start_garage.sh node-ID parsing (awk picked the table
+header, so layout assign failed on a fresh checkout).
+docs/REAL_AWS_ONE_DAY.md gains a "Ceiling measurements on
+real AWS" section: OIDC dispatch as the primary path, what
+becomes genuine, Terraform with enable_object_lock=true
+first, and the 1 TB run explicitly out of scope. Verified:
+S3 drills 7/7 detected+recovered 3/3 on Garage/moto,
+Azure drills 6/6 3/3 on Azurite, tests 34/34 (9 Blob
+skipped in the S3 venv) + 9/9 Blob tests. Nothing here has
+run on real AWS/Azure yet; the first OIDC dispatch is the
+evidence.
+
 ## v1.2.0, 2026-11-24
 
 Ceiling version, S3 side. Parallel sync engine (`--workers`,

@@ -20,7 +20,7 @@ from azure.core.exceptions import HttpResponseError
 from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 
 from common import (ACCOUNT_KEY, ACCOUNT_NAME, BACKEND, BLOB_ENDPOINT,
-                    CONTAINER_PREFIX, azurite_client, empty_all)
+                    CONTAINER_PREFIX, blob_client, empty_all)
 from migrate_s3.dataset import generate_dataset
 from azure_blob.blob_sync import sync_all
 
@@ -35,7 +35,7 @@ def _sas_url(container, blob, start, expiry):
 
 
 def run_once():
-    service = azurite_client()
+    service = blob_client()
     empty_all(service)
     with tempfile.TemporaryDirectory() as d:
         source = Path(d) / "source"

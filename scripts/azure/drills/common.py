@@ -1,4 +1,4 @@
-"""Shared harness for the Azure Blob failure drills (Azurite backend).
+"""Shared harness for the Azure Blob failure drills.
 
 Every drill returns a dict with the same shape as scripts/drills/common.py:
     drill, backend, detected, detect_seconds, recovered,
@@ -11,12 +11,20 @@ cannot produce it), while the detection and recovery code is the
 real code path. A drill that cannot be produced on an emulator
 says so in its detail instead of pretending.
 
-Azurite is the Blob emulator on http://127.0.0.1:10000, started by
-scripts/start_azurite.sh with blob versioning ON. The well-known
-devstore account/key is the Azurite test credential, not a real
-Azure credential.
+Backend: Azurite is the default (local Blob emulator on
+http://127.0.0.1:10000, started by scripts/start_azurite.sh with
+blob versioning ON; the well-known devstore account/key is the
+Azurite test credential, not a real Azure credential). Set the
+three env vars below to run the same drills against real Azure:
+    AZURE_BLOB_ENDPOINT=https://<account>.blob.core.windows.net
+    AZURE_STORAGE_ACCOUNT_NAME=<account>
+    AZURE_STORAGE_KEY=<key>
+When a real account is configured, is_real_azure() is True and
+BACKEND reads "real Azure Blob"; otherwise it reads
+"Azurite 3.38.0". Nothing in the drills hardcodes Azurite.
 """
 import json
+import os
 import statistics
 import time
 from pathlib import Path
@@ -25,31 +33,79 @@ from azure.storage.blob import BlobServiceClient
 
 CONTAINER_PREFIX = "nas2azure-drill"
 SHARES = ["finance", "it-support", "it-operations", "operations"]
-BLOB_ENDPOINT = "http://127.0.0.1:10000/devstoreaccount1"
-ACCOUNT_NAME = "devstoreaccount1"
-ACCOUNT_KEY = (
+
+DEVSTORE_ACCOUNT = "devstoreaccount1"
+DEVSTORE_KEY = (
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/"
     "K1SZFPTOtr/KBHBeksoGMGw=="
 )
-BACKEND = "Azurite 3.38.0"
+DEFAULT_BLOB_ENDPOINT = "http://127.0.0.1:10000/devstoreaccount1"
+
+ACCOUNT_NAME = os.environ.get("AZURE_STORAGE_ACCOUNT_NAME", DEVSTORE_ACCOUNT)
+ACCOUNT_KEY = os.environ.get("AZURE_STORAGE_KEY", DEVSTORE_KEY)
+BLOB_ENDPOINT = os.environ.get("AZURE_BLOB_ENDPOINT")
+if BLOB_ENDPOINT is None and ACCOUNT_NAME != DEVSTORE_ACCOUNT:
+    # Account given, endpoint not: the standard Blob endpoint.
+    BLOB_ENDPOINT = f"https://{ACCOUNT_NAME}.blob.core.windows.net"
+elif BLOB_ENDPOINT is None:
+    BLOB_ENDPOINT = DEFAULT_BLOB_ENDPOINT
 
 
-def azurite_client(endpoint: str = BLOB_ENDPOINT,
-                   account_key: str = ACCOUNT_KEY,
-                   retry_total: int | None = None) -> BlobServiceClient:
-    """Blob client for Azurite. account_key override is how the
-    key-denied drill injects a wrong key. retry_total=0 disables
-    the SDK's default retry-with-backoff, for drills that must
-    fail fast on a dead endpoint."""
+def is_real_azure():
+    """True when a real storage account is configured: an account
+    name other than the devstore one, or an endpoint that is not
+    localhost. Every drill branches on this."""
+    if ACCOUNT_NAME != DEVSTORE_ACCOUNT:
+        return True
+    return ("127.0.0.1" not in BLOB_ENDPOINT
+            and "localhost" not in BLOB_ENDPOINT
+            and BLOB_ENDPOINT != DEFAULT_BLOB_ENDPOINT)
+
+
+BACKEND = "real Azure Blob" if is_real_azure() else "Azurite 3.38.0"
+
+
+def backend_label(emulator_label):
+    """Honest backend label for evidence. On real Azure the label
+    must say so; on Azurite it keeps the emulator's name."""
+    if is_real_azure():
+        return "real Azure Blob"
+    return emulator_label
+
+
+def blob_client(endpoint: str | None = None,
+                account_name: str | None = None,
+                account_key: str | None = None,
+                retry_total: int | None = None) -> BlobServiceClient:
+    """Blob client from the environment: real Azure when the env
+    vars point at a real account, Azurite otherwise. endpoint /
+    account_key overrides are how the key-denied and DNS drills
+    inject their failures. retry_total=0 disables the SDK's
+    default retry-with-backoff, for drills that must fail fast
+    on a dead endpoint."""
+    endpoint = endpoint or BLOB_ENDPOINT
+    account_name = account_name or ACCOUNT_NAME
+    account_key = account_key or ACCOUNT_KEY
+    protocol = "https" if is_real_azure() and endpoint.startswith("https") else "http"
     conn = (
-        "DefaultEndpointsProtocol=http;"
-        f"AccountName={ACCOUNT_NAME};AccountKey={account_key};"
+        f"DefaultEndpointsProtocol={protocol};"
+        f"AccountName={account_name};AccountKey={account_key};"
         f"BlobEndpoint={endpoint};"
     )
     kwargs = {}
     if retry_total is not None:
         kwargs["retry_total"] = retry_total
     return BlobServiceClient.from_connection_string(conn, **kwargs)
+
+
+def azurite_client(endpoint: str = BLOB_ENDPOINT,
+                   account_key: str = ACCOUNT_KEY,
+                   retry_total: int | None = None) -> BlobServiceClient:
+    """Backwards-compatible alias for blob_client. The name is
+    historical; the client it returns is env-aware (real Azure
+    when configured, Azurite otherwise)."""
+    return blob_client(endpoint=endpoint, account_key=account_key,
+                       retry_total=retry_total)
 
 
 def ensure_containers(service: BlobServiceClient) -> None:

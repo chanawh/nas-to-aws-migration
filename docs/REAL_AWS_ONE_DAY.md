@@ -68,3 +68,93 @@ under $1, destroyed same day)". Keep the 24-file dataset
 honest. The point is not the size of the data, it is that
 the Terraform, the sync, and the validator ran against
 real AWS APIs, not a pretend one.
+
+## Ceiling measurements on real AWS
+
+The ceiling drills (v1.2.0) were measured on emulators
+only: moto accepts puts with a disabled KMS key, neither
+emulator throttles, and Object Lock is not enforced anywhere
+except real AWS. v1.2.1 makes the same drill scripts measure
+genuinely on real AWS. Nothing about the drill CLIs changed,
+so the OIDC workflow above is still the primary path.
+
+### What the workflow runs
+
+Dispatch `real-aws` from the Actions tab (same OIDC setup
+as above). It runs, in order:
+
+1. `scripts/run_throughput.py --workers 1 4 8 --per-share 100`
+   with `S3_ENDPOINT=""` (real S3, 424 files / 401 MB).
+   This step also creates the four `nas2aws-migration-*`
+   buckets, so the drills that follow have buckets to work
+   in.
+2. `scripts/drills/run_all.py --runs 3` with `S3_ENDPOINT=""`.
+   Evidence lands in `evidence/failure-matrix-real-aws-<date>.json`
+   and `evidence/throughput-real-aws-<date>.json`, uploaded as
+   the `real-aws-evidence` artifact.
+
+### What becomes genuine on real AWS
+
+| Drill | On emulators | On real AWS |
+|---|---|---|
+| expired credentials | real (Garage validates keys) | real, same code |
+| KMS denied | simulated (stub) | **genuine**: creates a KMS key, disables it, measures the real `KMSInvalidStateException`, recovers with a second enabled key. Both drill keys are scheduled for deletion (7-day window, the KMS minimum) |
+| DNS / endpoint | real (client-side) | real, same code |
+| throttling | simulated (stub) | **genuine burst**: 32 workers x 200 puts against one prefix, counts real 503 SlowDown responses. `simulated=False` only if at least one genuine 503 was seen; if S3 absorbs the burst, the drill reports `throttled==0` honestly and `run_all.py` exits non-zero for that drill, because no throttling was measured |
+| interrupted multipart | real (Garage multipart API) | real, same code |
+| silent corruption | real (Garage) | real, same code |
+| ransomware | real restore on moto versioning | **genuine**: same attack/detect/restore against the real buckets, and the Object Lock probe genuinely tests enforcement |
+
+### Before dispatching
+
+Apply Terraform first, with Object Lock on:
+
+1. In `terraform/terraform.tfvars`, set `endpoint_url = ""`,
+   `use_emulator = false`, `bucket_prefix` to a globally
+   unique name, `enable_object_lock = true`, and `alert_email`.
+2. `terraform init && terraform apply`. This creates the
+   four share buckets with versioning on and the GOVERNANCE
+   Object Lock configuration the ransomware probe tests.
+   Without `enable_object_lock=true`, the probe records that
+   the lock was not enforced, and the run proves nothing
+   about Object Lock.
+3. The OIDC role needs, beyond the four buckets: `kms:CreateKey`,
+   `kms:DisableKey`, `kms:ScheduleKeyDeletion`, and
+   `kms:DescribeKey` (the KMS drill creates its own keys, so
+   the resource cannot be named in advance — scope it to the
+   account), plus `s3:PutBucketVersioning` (the ransomware
+   drill enables versioning idempotently).
+
+### What is NOT part of the one-day run
+
+The 1 TB scale run is explicitly not part of this run. At
+measured rates it takes ~14–16 hours; scan parallelization
+is the next lever before a 1 TB run is worth doing. The
+one-day run is the 424-file throughput benchmark plus the
+seven drills, under $1 without FSx.
+
+### Azure Blob real run
+
+The Blob drills take the same shape on real Azure. The drill
+steps are in `docs/AZURE_BLOB.md` (Reproduce section); the
+only additions for a real account are creating the storage
+account first (any region, Standard LRS, blob versioning on —
+the drills create their own containers) and the three env vars
+(set them in the shell before running
+`scripts/azure/drills/run_all.py`):
+
+```sh
+export AZURE_BLOB_ENDPOINT=https://<account>.blob.core.windows.net
+export AZURE_STORAGE_ACCOUNT_NAME=<account>
+export AZURE_STORAGE_KEY=<key>
+~/workspace/nas-to-aws-migration-venv-azure/bin/python \
+    scripts/azure/drills/run_all.py --runs 3 \
+    --out evidence/azure-failure-matrix-real-azure-$(date +%F).json
+```
+
+With the vars unset, the drills run against Azurite exactly
+as before. On real Azure the throttle drill runs the same
+32 x 200 burst and counts genuine 503 ServerBusy responses
+(429s are counted separately in the detail); soft-delete
+restore and immutability, which return 501 on Azurite,
+become measurable.

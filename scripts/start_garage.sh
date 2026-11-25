@@ -56,7 +56,7 @@ elif [ ! -f server.pid ] || ! kill -0 "$(cat server.pid)" 2>/dev/null; then
   done
 fi
 
-NODE_ID=$(./garage -c garage.toml status 2>/dev/null | awk 'NR==2 {print $1}')
+NODE_ID=$(./garage -c garage.toml status 2>/dev/null | awk '$1 ~ /^[0-9a-f]{16}$/ {print $1; exit}')
 if ! ./garage -c garage.toml layout show 2>/dev/null | grep -q "dc1"; then
   ./garage -c garage.toml layout assign -z dc1 -c 30G "$NODE_ID" >/dev/null
   ./garage -c garage.toml layout apply --version 1 >/dev/null

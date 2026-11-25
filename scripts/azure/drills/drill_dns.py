@@ -21,14 +21,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from azure.core.exceptions import ServiceRequestError
 
-from common import BACKEND, CONTAINER_PREFIX, azurite_client
+from common import BACKEND, CONTAINER_PREFIX, blob_client
 
 
 def _probe(endpoint):
     # retry_total=0: the SDK's default retry policy would otherwise
     # retry a refused connection with exponential backoff (up to
     # ~120 s per probe). A dead endpoint must fail fast.
-    client = azurite_client(endpoint=endpoint, retry_total=0)
+    client = blob_client(endpoint=endpoint, retry_total=0)
     next(client.list_containers(), None)
 
 
@@ -50,7 +50,7 @@ def run_once():
     t0 = time.time()
     recovered = False
     try:
-        next(azurite_client().list_containers(), None)
+        next(blob_client().list_containers(), None)
         recovered = True
     except Exception:
         pass

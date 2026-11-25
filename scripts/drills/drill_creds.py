@@ -13,11 +13,11 @@ import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
-from common import BUCKET_PREFIX, garage_client
+from common import BUCKET_PREFIX, backend_label, garage_client
 
 
 def run_once():
-    endpoint = os.environ["S3_ENDPOINT"]
+    endpoint = os.environ.get("S3_ENDPOINT") or None
     bad = boto3.client(
         "s3", region_name="us-west-2", endpoint_url=endpoint,
         aws_access_key_id="AKIAIOSFODNN7EXAMPLE",
@@ -44,7 +44,7 @@ def run_once():
         detail += f"; recovery failed: {e.response['Error']['Code']}"
     recover_s = round(time.time() - t0, 3)
 
-    return {"drill": "expired_credentials", "backend": "Garage v1.3.0",
+    return {"drill": "expired_credentials", "backend": backend_label("Garage v1.3.0"),
             "detected": detected, "detect_seconds": detect_s,
             "recovered": recovered, "recover_seconds": recover_s,
             "simulated": False, "detail": detail}

@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-24",
+  "date": "2026-11-25",
   "backend_notes": {
     "Azurite 3.38.0": "local Blob emulator; versioning via --accountConfigAsJson flag; soft delete and immutability return 501; never throttles",
     "real Azure": "soft-delete restore, immutability/legal hold, genuine throttling (429/503), Entra/RBAC auth, and Terraform apply are real-Azure-only"
@@ -9,7 +9,7 @@
       "drill": "expired_sas",
       "backend": "Azurite 3.38.0",
       "detected": true,
-      "detect_seconds": 0.011,
+      "detect_seconds": 0.012,
       "recovered": true,
       "recover_seconds": 0.005,
       "simulated": false,
@@ -19,7 +19,7 @@
           "drill": "expired_sas",
           "backend": "Azurite 3.38.0",
           "detected": true,
-          "detect_seconds": 0.011,
+          "detect_seconds": 0.012,
           "recovered": true,
           "recover_seconds": 0.005,
           "simulated": false,
@@ -29,9 +29,9 @@
           "drill": "expired_sas",
           "backend": "Azurite 3.38.0",
           "detected": true,
-          "detect_seconds": 0.014,
+          "detect_seconds": 0.009,
           "recovered": true,
-          "recover_seconds": 0.008,
+          "recover_seconds": 0.005,
           "simulated": false,
           "detail": "expired: 403 StorageErrorCode.AUTHORIZATION_FAILURE; not-yet-valid: 403 StorageErrorCode.AUTHORIZATION_FAILURE; recovery is a SAS valid right now"
         },
@@ -39,15 +39,15 @@
           "drill": "expired_sas",
           "backend": "Azurite 3.38.0",
           "detected": true,
-          "detect_seconds": 0.011,
+          "detect_seconds": 0.008,
           "recovered": true,
-          "recover_seconds": 0.006,
+          "recover_seconds": 0.004,
           "simulated": false,
           "detail": "expired: 403 StorageErrorCode.AUTHORIZATION_FAILURE; not-yet-valid: 403 StorageErrorCode.AUTHORIZATION_FAILURE; recovery is a SAS valid right now"
         }
       ],
-      "median_detect_seconds": 0.011,
-      "median_recover_seconds": 0.006,
+      "median_detect_seconds": 0.009,
+      "median_recover_seconds": 0.005,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -55,9 +55,9 @@
       "drill": "key_denied",
       "backend": "Azurite 3.38.0",
       "detected": true,
-      "detect_seconds": 0.004,
+      "detect_seconds": 0.003,
       "recovered": true,
-      "recover_seconds": 0.007,
+      "recover_seconds": 0.005,
       "simulated": false,
       "detail": "list_blobs failed with 403 StorageErrorCode.AUTHORIZATION_FAILURE",
       "runs": [
@@ -65,9 +65,9 @@
           "drill": "key_denied",
           "backend": "Azurite 3.38.0",
           "detected": true,
-          "detect_seconds": 0.004,
+          "detect_seconds": 0.003,
           "recovered": true,
-          "recover_seconds": 0.007,
+          "recover_seconds": 0.005,
           "simulated": false,
           "detail": "list_blobs failed with 403 StorageErrorCode.AUTHORIZATION_FAILURE"
         },
@@ -77,7 +77,7 @@
           "detected": true,
           "detect_seconds": 0.005,
           "recovered": true,
-          "recover_seconds": 0.007,
+          "recover_seconds": 0.01,
           "simulated": false,
           "detail": "list_blobs failed with 403 StorageErrorCode.AUTHORIZATION_FAILURE"
         },
@@ -85,15 +85,15 @@
           "drill": "key_denied",
           "backend": "Azurite 3.38.0",
           "detected": true,
-          "detect_seconds": 0.004,
+          "detect_seconds": 0.003,
           "recovered": true,
-          "recover_seconds": 0.007,
+          "recover_seconds": 0.005,
           "simulated": false,
           "detail": "list_blobs failed with 403 StorageErrorCode.AUTHORIZATION_FAILURE"
         }
       ],
-      "median_detect_seconds": 0.004,
-      "median_recover_seconds": 0.007,
+      "median_detect_seconds": 0.003,
+      "median_recover_seconds": 0.005,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -103,7 +103,7 @@
       "detected": true,
       "detect_seconds": 0.004,
       "recovered": true,
-      "recover_seconds": 0.006,
+      "recover_seconds": 0.005,
       "simulated": false,
       "detail": "http://127.0.0.1:9/devstoreaccount1: no response (connection/DNS failure); http://127.0.0.1:59999/devstoreaccount1: no response (connection/DNS failure); recovery is the same call against the healthy endpoint",
       "runs": [
@@ -113,16 +113,6 @@
           "detected": true,
           "detect_seconds": 0.004,
           "recovered": true,
-          "recover_seconds": 0.006,
-          "simulated": false,
-          "detail": "http://127.0.0.1:9/devstoreaccount1: no response (connection/DNS failure); http://127.0.0.1:59999/devstoreaccount1: no response (connection/DNS failure); recovery is the same call against the healthy endpoint"
-        },
-        {
-          "drill": "dns_endpoint_failure",
-          "backend": "client-side",
-          "detected": true,
-          "detect_seconds": 0.005,
-          "recovered": true,
           "recover_seconds": 0.005,
           "simulated": false,
           "detail": "http://127.0.0.1:9/devstoreaccount1: no response (connection/DNS failure); http://127.0.0.1:59999/devstoreaccount1: no response (connection/DNS failure); recovery is the same call against the healthy endpoint"
@@ -131,15 +121,25 @@
           "drill": "dns_endpoint_failure",
           "backend": "client-side",
           "detected": true,
-          "detect_seconds": 0.004,
+          "detect_seconds": 0.003,
+          "recovered": true,
+          "recover_seconds": 0.004,
+          "simulated": false,
+          "detail": "http://127.0.0.1:9/devstoreaccount1: no response (connection/DNS failure); http://127.0.0.1:59999/devstoreaccount1: no response (connection/DNS failure); recovery is the same call against the healthy endpoint"
+        },
+        {
+          "drill": "dns_endpoint_failure",
+          "backend": "client-side",
+          "detected": true,
+          "detect_seconds": 0.003,
           "recovered": true,
           "recover_seconds": 0.004,
           "simulated": false,
           "detail": "http://127.0.0.1:9/devstoreaccount1: no response (connection/DNS failure); http://127.0.0.1:59999/devstoreaccount1: no response (connection/DNS failure); recovery is the same call against the healthy endpoint"
         }
       ],
-      "median_detect_seconds": 0.004,
-      "median_recover_seconds": 0.005,
+      "median_detect_seconds": 0.003,
+      "median_recover_seconds": 0.004,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -149,7 +149,7 @@
       "detected": true,
       "detect_seconds": 0.3,
       "recovered": true,
-      "recover_seconds": 0.176,
+      "recover_seconds": 0.138,
       "simulated": true,
       "detail": "stubbed 503 x2 then success in 3 attempts; live burst of 50 parallel puts: 0 throttled, 0 failed. Genuine throttling is real-Azure-only.",
       "runs": [
@@ -159,7 +159,7 @@
           "detected": true,
           "detect_seconds": 0.3,
           "recovered": true,
-          "recover_seconds": 0.176,
+          "recover_seconds": 0.138,
           "simulated": true,
           "detail": "stubbed 503 x2 then success in 3 attempts; live burst of 50 parallel puts: 0 throttled, 0 failed. Genuine throttling is real-Azure-only."
         },
@@ -169,7 +169,7 @@
           "detected": true,
           "detect_seconds": 0.3,
           "recovered": true,
-          "recover_seconds": 0.217,
+          "recover_seconds": 0.139,
           "simulated": true,
           "detail": "stubbed 503 x2 then success in 3 attempts; live burst of 50 parallel puts: 0 throttled, 0 failed. Genuine throttling is real-Azure-only."
         },
@@ -177,15 +177,15 @@
           "drill": "throttling",
           "backend": "Azurite (live) + stub (simulated)",
           "detected": true,
-          "detect_seconds": 0.303,
+          "detect_seconds": 0.3,
           "recovered": true,
-          "recover_seconds": 0.197,
+          "recover_seconds": 0.178,
           "simulated": true,
           "detail": "stubbed 503 x2 then success in 3 attempts; live burst of 50 parallel puts: 0 throttled, 0 failed. Genuine throttling is real-Azure-only."
         }
       ],
       "median_detect_seconds": 0.3,
-      "median_recover_seconds": 0.197,
+      "median_recover_seconds": 0.139,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -193,9 +193,9 @@
       "drill": "interrupted_upload",
       "backend": "Azurite 3.38.0",
       "detected": true,
-      "detect_seconds": 0.012,
+      "detect_seconds": 0.011,
       "recovered": true,
-      "recover_seconds": 0.356,
+      "recover_seconds": 0.318,
       "simulated": false,
       "detail": "uncommitted blocks listed: 2, blob visible before commit: False; resumed upload SHA-256 matches: True",
       "runs": [
@@ -203,9 +203,9 @@
           "drill": "interrupted_upload",
           "backend": "Azurite 3.38.0",
           "detected": true,
-          "detect_seconds": 0.012,
+          "detect_seconds": 0.011,
           "recovered": true,
-          "recover_seconds": 0.356,
+          "recover_seconds": 0.318,
           "simulated": false,
           "detail": "uncommitted blocks listed: 2, blob visible before commit: False; resumed upload SHA-256 matches: True"
         },
@@ -215,7 +215,7 @@
           "detected": true,
           "detect_seconds": 0.013,
           "recovered": true,
-          "recover_seconds": 0.362,
+          "recover_seconds": 0.284,
           "simulated": false,
           "detail": "uncommitted blocks listed: 2, blob visible before commit: False; resumed upload SHA-256 matches: True"
         },
@@ -223,15 +223,15 @@
           "drill": "interrupted_upload",
           "backend": "Azurite 3.38.0",
           "detected": true,
-          "detect_seconds": 0.014,
+          "detect_seconds": 0.011,
           "recovered": true,
-          "recover_seconds": 0.344,
+          "recover_seconds": 0.274,
           "simulated": false,
           "detail": "uncommitted blocks listed: 2, blob visible before commit: False; resumed upload SHA-256 matches: True"
         }
       ],
-      "median_detect_seconds": 0.013,
-      "median_recover_seconds": 0.356,
+      "median_detect_seconds": 0.011,
+      "median_recover_seconds": 0.284,
       "detected_runs": 3,
       "recovered_runs": 3
     },
@@ -239,45 +239,45 @@
       "drill": "silent_corruption",
       "backend": "Azurite 3.38.0",
       "detected": true,
-      "detect_seconds": 0.144,
+      "detect_seconds": 0.136,
       "recovered": true,
-      "recover_seconds": 0.37,
+      "recover_seconds": 0.284,
       "simulated": false,
-      "detail": "3 blobs corrupted in 0.013s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True",
+      "detail": "3 blobs corrupted in 0.011s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True",
       "runs": [
         {
           "drill": "silent_corruption",
           "backend": "Azurite 3.38.0",
           "detected": true,
-          "detect_seconds": 0.144,
+          "detect_seconds": 0.136,
           "recovered": true,
-          "recover_seconds": 0.37,
+          "recover_seconds": 0.284,
           "simulated": false,
-          "detail": "3 blobs corrupted in 0.013s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
+          "detail": "3 blobs corrupted in 0.011s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
         },
         {
           "drill": "silent_corruption",
           "backend": "Azurite 3.38.0",
           "detected": true,
-          "detect_seconds": 0.175,
+          "detect_seconds": 0.123,
           "recovered": true,
-          "recover_seconds": 0.475,
+          "recover_seconds": 0.298,
+          "simulated": false,
+          "detail": "3 blobs corrupted in 0.009s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
+        },
+        {
+          "drill": "silent_corruption",
+          "backend": "Azurite 3.38.0",
+          "detected": true,
+          "detect_seconds": 0.129,
+          "recovered": true,
+          "recover_seconds": 0.31,
           "simulated": false,
           "detail": "3 blobs corrupted in 0.017s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
-        },
-        {
-          "drill": "silent_corruption",
-          "backend": "Azurite 3.38.0",
-          "detected": true,
-          "detect_seconds": 0.199,
-          "recovered": true,
-          "recover_seconds": 0.443,
-          "simulated": false,
-          "detail": "3 blobs corrupted in 0.019s; verify found exactly those 3; repair re-uploaded 3, final verify passed: True"
         }
       ],
-      "median_detect_seconds": 0.175,
-      "median_recover_seconds": 0.443,
+      "median_detect_seconds": 0.129,
+      "median_recover_seconds": 0.298,
       "detected_runs": 3,
       "recovered_runs": 3
     }

@@ -19,8 +19,8 @@ from migrate_s3.dataset import generate_dataset
 from migrate_s3.sync import sync_all
 from migrate_s3.verify import verify
 
-from common import (BUCKET_PREFIX, empty_bucket, ensure_buckets,
-                    garage_client)
+from common import (BUCKET_PREFIX, backend_label, empty_bucket,
+                    ensure_buckets, garage_client)
 
 
 def run_once():
@@ -60,7 +60,7 @@ def run_once():
         recovered = all_pass and repaired == 3
         recover_s = round(time.time() - t0, 3)
 
-    return {"drill": "silent_corruption", "backend": "Garage v1.3.0",
+    return {"drill": "silent_corruption", "backend": backend_label("Garage v1.3.0"),
             "detected": detected, "detect_seconds": detect_s,
             "recovered": recovered, "recover_seconds": recover_s,
             "simulated": False,

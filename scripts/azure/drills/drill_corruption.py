@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "python"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from common import (BACKEND, CONTAINER_PREFIX, azurite_client, empty_all)
+from common import (BACKEND, CONTAINER_PREFIX, blob_client, empty_all)
 from migrate_s3.dataset import generate_dataset
 from azure_blob.blob_sync import sync_all
 from azure_blob.blob_verify import verify
@@ -27,7 +27,7 @@ TARGETS = (("finance", "budget-2027-draft.csv"),
 
 
 def run_once():
-    service = azurite_client()
+    service = blob_client()
     empty_all(service)
     with tempfile.TemporaryDirectory() as d:
         source = Path(d) / "source"

@@ -16,20 +16,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from azure.core.exceptions import HttpResponseError
 
-from common import (BACKEND, CONTAINER_PREFIX, azurite_client, empty_all)
+from common import (BACKEND, CONTAINER_PREFIX, blob_client, empty_all)
 from migrate_s3.dataset import generate_dataset
 from azure_blob.blob_sync import sync_all
 
 
 def run_once():
-    service = azurite_client()
+    service = blob_client()
     empty_all(service)
     with tempfile.TemporaryDirectory() as d:
         source = Path(d) / "source"
         generate_dataset(source)
         sync_all(service, source, CONTAINER_PREFIX)
 
-        bad = azurite_client(account_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        bad = blob_client(account_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
         t0 = time.time()
         detected, detail = False, ""
         try:
