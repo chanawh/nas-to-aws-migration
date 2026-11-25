@@ -17,8 +17,13 @@ Usage (credentials via environment, never committed):
   S3_ENDPOINT=http://127.0.0.1:3900 \
   AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
   python scripts/run_scaled_demo.py --source /path/to/source \
-      --per-share 2500 --file-mb 1 \
+      --per-share 2500 --file-mb 1 --workers 4 \
       --out evidence/scaled-run.json
+
+--workers N runs the sync engine in parallel (per-thread boto3
+clients, same path-style addressing as the main client).
+Default 1, the single-threaded 10 GB behaviour. The verify
+passes stay single-threaded.
 
 Buckets named <bucket-prefix>-<share> must exist (or be
 creatable) at the endpoint before the run.
@@ -54,6 +59,7 @@ def main():
     ap.add_argument("--source", required=True)
     ap.add_argument("--per-share", type=int, default=2500)
     ap.add_argument("--file-mb", type=int, default=1)
+    ap.add_argument("--workers", type=int, default=1)
     ap.add_argument("--bucket-prefix", default="nas2aws-migration")
     ap.add_argument("--out", default="evidence/scaled-run.json")
     args = ap.parse_args()
@@ -93,7 +99,20 @@ def main():
 
     quotas = load_quotas(src / "quotas.json")
     acl_map = load_acl(src / "acl.json")
-    results = {"backend": os.environ.get("S3_BACKEND_LABEL", "S3-compatible emulator (local)")}
+
+    def client_factory():
+        # One client per worker thread, same path-style addressing
+        # as the main client (the default per-thread factory in
+        # sync.py does not set it, and Garage needs path style).
+        return boto3.client(
+            "s3", region_name=os.environ.get("AWS_REGION", "us-west-2"),
+            endpoint_url=os.environ["S3_ENDPOINT"],
+            aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+            config=Config(s3={"addressing_style": "path"}))
+
+    results = {"backend": os.environ.get("S3_BACKEND_LABEL", "S3-compatible emulator (local)"),
+               "workers": args.workers}
 
     def timed(label, fn):
         t0 = time.time()
@@ -103,7 +122,8 @@ def main():
         return out
 
     def do_sync(tag):
-        r = sync_all(s3, src, args.bucket_prefix, quotas=quotas, acl_map=acl_map)
+        r = sync_all(s3, src, args.bucket_prefix, quotas=quotas, acl_map=acl_map,
+                     workers=args.workers, client_factory=client_factory)
         copied = sum(len(x.copied) for x in r.values())
         b = sum(x.bytes_copied for x in r.values())
         unchanged = sum(len(x.skipped_unchanged) for x in r.values())

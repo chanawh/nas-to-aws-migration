@@ -36,12 +36,41 @@ it counts as copied, and verify re-hashes the actual S3 bytes
 (ETags are never trusted), so the sync number includes a full
 read-back of every object.
 
+## 50 GB, 50,024 objects (2026-11-24)
+
+Same method as the 10 GB run above (same script, same Garage
+emulator), with two differences: `--per-share 12500` (12,500
+generated 1 MB files per share) and `--workers 4` (the script
+gained a `--workers` flag plus per-thread path-style clients;
+the engine itself is unchanged). Evidence:
+`evidence/scaled-run-50gb-2026-11-24.json`.
+
+| Step | Result | Elapsed |
+|---|---|---|
+| Sync | 50,024 objects, 52,429,963,264 bytes, 25.8 MB/s, 24.6 obj/s (4 workers) | 2034.17s |
+| Verify 1 | PASS, 50,024 checked, 0 mismatches | 653.86s |
+| Corrupt | 10 objects overwritten (3/3/2/2 per share) | - |
+| Verify 2 | FAIL, exactly 10 mismatched | 652.11s |
+| Repair sync | exactly 10 re-uploaded, 50,014 unchanged | 598.61s |
+| Verify 3 | PASS, 50,024 checked, 0 mismatches | 670.87s |
+
+Note: this was the second attempt. The first attempt was
+killed mid-sync by a VM replacement (~39% uploaded). The
+dataset was reused and the full cycle re-ran from empty
+buckets. Garage is content-addressed, so blocks identical to
+the first attempt's uploads were already stored; the re-sync
+may have run faster than a cold run. All cycle steps ran
+fully and passed on this attempt.
+
 ## Cost model (list-price estimate, us-west-2)
 
 Interview numbers, not a bill: 10.49 GB on real S3 Standard
 is ~$0.24/month storage, ~$0.05 for 10,024 PUTs, ~$0.01 for
 three full verify passes of GETs - about **$0.30 first
-month** for the lab dataset. The 80 TB production story in
+month** for the lab dataset. At 50 GB the same model is
+52.43 GB, ~$1.21/month storage, ~$0.25 for 50,024 PUTs,
+~$0.06 for three verify passes — about **$1.52 first
+month**. The 80 TB production story in
 the README (~$1,850/month S3 Standard, Glacier lifecycle as
 the lever) is unchanged.
 

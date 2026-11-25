@@ -33,7 +33,7 @@ as one, and the Terraform is the same code as a real AWS run.
 
 | Metric | Result | Evidence |
 |---|---|---|
-| Scale run | 10,024 objects / 10.49 GB to Garage S3 emulator, 13.5 MB/s single-threaded | `evidence/scaled-run-10gb-2026-11-22.json` |
+| Scale run | 50,024 objects / 52.43 GB to Garage S3 emulator, 25.8 MB/s at 4 workers | `evidence/scaled-run-50gb-2026-11-24.json` |
 | Parallel throughput | 1 worker 17.57 MB/s median; 4 workers 19.77 MB/s (1.13x); 8 workers 17.32 MB/s (~1.0x) | `evidence/throughput-2026-11-24.json` |
 | Failure matrix | 6 drills, 3 runs each, all detected and recovered | `evidence/failure-matrix-2026-11-24.json` |
 | Ransomware drill | 10 overwritten + 10 deleted of 24; all 20 restored, 0 data loss | same file, `ransomware` drill |

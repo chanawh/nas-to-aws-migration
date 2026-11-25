@@ -1,0 +1,42 @@
+{
+  "backend": "Garage v1.3.0 (local S3 emulator, NOT real AWS)",
+  "workers": 4,
+  "sync_seconds": 2034.17,
+  "verify1_checked": 50024,
+  "verify1_mismatched": 0,
+  "verify1_passed": true,
+  "verify1_seconds": 653.86,
+  "corruptions_injected": 10,
+  "verify2_checked": 50024,
+  "verify2_mismatched": 10,
+  "verify2_passed": false,
+  "verify2_seconds": 652.11,
+  "repair_seconds": 598.61,
+  "verify3_checked": 50024,
+  "verify3_mismatched": 0,
+  "verify3_passed": true,
+  "verify3_seconds": 670.87,
+  "dataset_bin_bytes": 52428800000,
+  "throughput_mb_s": 25.77,
+  "objects_per_s": 24.6,
+  "initial_sync": {
+    "copied": 50024,
+    "bytes": 52429963264,
+    "seconds": 2034.17
+  },
+  "repair_sync": {
+    "copied": 10,
+    "bytes": 10485760,
+    "unchanged": 50014,
+    "seconds": 598.61
+  },
+  "s3_cost_model_usd_estimate": {
+    "note": "list-price estimate us-west-2, interview numbers not resume claims",
+    "dataset_gb": 52.43,
+    "storage_per_month": 1.21,
+    "put_requests_50024": 0.25,
+    "get_requests_3x_verify": 0.06,
+    "first_month_total": 1.52
+  },
+  "notes": "Second attempt: the first attempt was killed mid-sync by a VM replacement (~39% uploaded: finance complete, it-operations partial). The dataset was reused and the full cycle re-ran from empty buckets. Garage is content-addressed, so blocks identical to the first attempt's uploads were already stored; the re-sync may have run faster than a cold run. All cycle steps ran fully and passed on this attempt."
+}
