@@ -16,6 +16,11 @@ provider "aws" {
   region     = var.region
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
+  # Session token for temporary credentials (GitHub OIDC). Empty by
+  # default, which is the emulator case; the real-aws workflow passes
+  # the OIDC session token. Without it, temporary credentials fail
+  # authentication even when the key and secret are correct.
+  token = var.aws_session_token
 
   skip_credentials_validation = var.use_emulator
   skip_metadata_api_check     = var.use_emulator

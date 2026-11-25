@@ -57,6 +57,14 @@ def _run_with_client(s3, lock_bucket, real):
     any S3 client. The caller owns bucket setup: on moto the
     buckets are created here, on real AWS they come from
     Terraform (versioning on, Object Lock when enabled)."""
+    # On real AWS the share buckets carry a GOVERNANCE Object Lock
+    # default retention, so deleting a retained object needs the
+    # break-glass bypass. The attack and the recovery use it so the
+    # drill can exercise versioning-based detection and restore.
+    # Object Lock enforcement itself is tested separately by the
+    # lock probe below, which deliberately does NOT pass bypass —
+    # its delete must be denied to prove enforcement.
+    bypass = {"BypassGovernanceRetention": True} if real else {}
     with tempfile.TemporaryDirectory() as d:
         source = Path(d) / "source"
         generate_dataset(source)
@@ -70,7 +78,7 @@ def _run_with_client(s3, lock_bucket, real):
         for share, key in targets[:OVERWRITE]:
             s3.put_object(Bucket=f"{PREFIX}-{share}", Key=key, Body=b"ransomware\n")
         for share, key in targets[OVERWRITE:]:
-            s3.delete_object(Bucket=f"{PREFIX}-{share}", Key=key)
+            s3.delete_object(Bucket=f"{PREFIX}-{share}", Key=key, **bypass)
         attack_s = round(time.time() - t0, 3)
 
         # Detect.
@@ -99,7 +107,7 @@ def _run_with_client(s3, lock_bucket, real):
             if markers:
                 # Deleted: remove the delete marker, the old version returns.
                 s3.delete_object(Bucket=f"{PREFIX}-{share}", Key=key,
-                                 VersionId=markers[0]["VersionId"])
+                                 VersionId=markers[0]["VersionId"], **bypass)
                 restored += 1
             else:
                 want = scan_directory(source / share)[key].sha256

@@ -1,19 +1,36 @@
 # Real-AWS runs via GitHub OIDC (no static keys)
 #
-# Manual-only workflow: runs the throughput benchmark and the
-# failure drills against a REAL AWS account, using OpenID
-# Connect so no long-lived access key ever exists in GitHub.
+# Manual-only workflow: applies the Terraform stack, runs the
+# throughput benchmark and the failure drills against REAL AWS,
+# then destroys the stack — all in one dispatch, all in one job,
+# so the local Terraform state is present for the destroy. No
+# emulator is involved: S3_ENDPOINT stays "" throughout.
 #
 # UNTESTED against real AWS: no AWS account exists in this
 # environment, so this workflow has never run. Do not claim it
 # works until it has run green once. Setup is documented in
-# docs/REAL_AWS_ONE_DAY.md (OIDC section).
+# docs/REAL_AWS_ONE_DAY.md (OIDC section + scripts/setup_oidc.sh).
 #
 # What it runs: the same scripts as the emulator runs, with no
 # endpoint URL (endpoint = real AWS) and credentials from the
 # OIDC-assumed role. The drills that need a real backend (KMS
 # denial, genuine throttling, Object Lock enforcement) only
 # produce real results here.
+#
+# Bucket prefix is fixed at nas2aws-migration: the drills hardcode
+# it (scripts/drills/common.py, ransomware.py), so the Terraform
+# buckets must use it. If that prefix is taken in the account,
+# the prefix has to change in terraform.tfvars AND in those two
+# files before dispatching.
+#
+# Orphan-state caveat: Terraform state is LOCAL to the runner's
+# workspace (no remote backend). If a run fails before the
+# destroy step completes — or the runner is discarded mid-run —
+# the state file is lost and the infrastructure is orphaned. It
+# must then be destroyed manually; the command is in
+# docs/REAL_AWS_ONE_DAY.md ("If the run is orphaned"). The
+# destroy step has if: always() so a drill failure does not
+# orphan the stack, but it cannot help if the runner itself dies.
 #
 # This workflow is separate from ci.yml on purpose: ci.yml
 # stays $0 and green on every push with no account. This one
@@ -23,13 +40,18 @@ name: real-aws
 on:
   workflow_dispatch:
     inputs:
+      per_share:
+        description: "Scale files per share (2500 = 10 GB, 12500 = 50 GB)"
+        default: "2500"
+        required: false
       workers:
         description: "Worker counts for the throughput run, space separated"
         default: "1 4 8"
         required: false
-      per_share:
-        description: "Scale files per share for the throughput run"
-        default: "100"
+      enable_fsx:
+        description: "Enable FSx for NetApp ONTAP + DataSync + CloudTrail (real AWS only, ~$4.20/day)"
+        type: boolean
+        default: false
         required: false
 
 permissions:
@@ -44,6 +66,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
       - name: Install Python deps
         run: |
           python -m venv /tmp/venv
@@ -53,12 +78,31 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
           aws-region: us-west-2
+          # 4 hours: covers the 10 GB default and the 50 GB option.
+          # The role's MaxSessionDuration must allow it (the setup
+          # script sets 12 hours).
+          role-duration-seconds: 14400
+      - name: Terraform apply (real AWS, Object Lock on)
+        run: |
+          cd terraform
+          terraform init -input=false
+          terraform apply -auto-approve -input=false \
+            -var="use_emulator=false" \
+            -var="endpoint_url=" \
+            -var="enable_object_lock=true" \
+            -var="bucket_prefix=nas2aws-migration" \
+            -var="enable_fsx_datasync=${{ inputs.enable_fsx }}" \
+            -var="enable_cloudtrail=${{ inputs.enable_fsx }}" \
+            -var="aws_access_key=$AWS_ACCESS_KEY_ID" \
+            -var="aws_secret_key=$AWS_SECRET_ACCESS_KEY" \
+            -var="aws_session_token=$AWS_SESSION_TOKEN"
       - name: Throughput benchmark (real S3)
         run: |
           /tmp/venv/bin/python scripts/run_throughput.py \
             --source /tmp/nas2aws-throughput/source \
             --per-share "${{ inputs.per_share }}" --file-mb 1 \
             --workers ${{ inputs.workers }} \
+            --bucket-prefix nas2aws-migration \
             --out evidence/throughput-real-aws-$(date +%F).json
         env:
           S3_ENDPOINT: ""
@@ -69,9 +113,31 @@ jobs:
             --out evidence/failure-matrix-real-aws-$(date +%F).json
         env:
           S3_ENDPOINT: ""
+      - name: Empty buckets (so Terraform destroy can proceed)
+        if: always()
+        run: |
+          /tmp/venv/bin/python scripts/empty_buckets.py \
+            --bucket-prefix nas2aws-migration
+        env:
+          S3_ENDPOINT: ""
+      - name: Terraform destroy
+        if: always()
+        run: |
+          cd terraform
+          terraform destroy -auto-approve -input=false \
+            -var="use_emulator=false" \
+            -var="endpoint_url=" \
+            -var="enable_object_lock=true" \
+            -var="bucket_prefix=nas2aws-migration" \
+            -var="enable_fsx_datasync=${{ inputs.enable_fsx }}" \
+            -var="enable_cloudtrail=${{ inputs.enable_fsx }}" \
+            -var="aws_access_key=$AWS_ACCESS_KEY_ID" \
+            -var="aws_secret_key=$AWS_SECRET_ACCESS_KEY" \
+            -var="aws_session_token=$AWS_SESSION_TOKEN"
       - name: Upload evidence
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: real-aws-evidence
           path: evidence/*real-aws*.json
+          if-no-files-found: warn

@@ -50,10 +50,17 @@ def log(msg):
 
 
 def empty_bucket(s3, bucket):
+    # On real AWS the share buckets carry a GOVERNANCE Object Lock
+    # default retention (30 days), so deleting a retained object
+    # needs the break-glass bypass. On emulators there is no
+    # retention, so the parameter is omitted (moto/Garage do not
+    # implement it). Real AWS is when S3_ENDPOINT is unset.
+    kwargs = ({"BypassGovernanceRetention": True}
+              if not os.environ.get("S3_ENDPOINT") else {})
     paginator = s3.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=bucket):
         for o in page.get("Contents", []):
-            s3.delete_object(Bucket=bucket, Key=o["Key"])
+            s3.delete_object(Bucket=bucket, Key=o["Key"], **kwargs)
 
 
 def main():
@@ -89,6 +96,9 @@ def main():
         endpoint_url=os.environ.get("S3_ENDPOINT") or None,
         aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+        # Session token: required for temporary (OIDC/STS) credentials.
+        # None when unset (emulators), which boto3 treats as no token.
+        aws_session_token=os.environ.get("AWS_SESSION_TOKEN"),
         config=Config(s3={"addressing_style": "path"}))
 
     def client_factory():
@@ -97,6 +107,7 @@ def main():
             endpoint_url=os.environ.get("S3_ENDPOINT") or None,
             aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
             aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+            aws_session_token=os.environ.get("AWS_SESSION_TOKEN"),
             config=Config(s3={"addressing_style": "path"}))
 
     quotas = load_quotas(src / "quotas.json")

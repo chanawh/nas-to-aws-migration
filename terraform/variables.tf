@@ -30,6 +30,13 @@ variable "aws_secret_key" {
   sensitive   = true
 }
 
+variable "aws_session_token" {
+  description = "Session token for temporary credentials (GitHub OIDC / STS assume-role). Empty means no token. The real-aws workflow passes the OIDC session token here; without it, temporary credentials fail. Never commit a real token."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "bucket_prefix" {
   description = "Prefix for the four migration buckets. Must be globally unique on real AWS - change it before a real apply."
   type        = string
