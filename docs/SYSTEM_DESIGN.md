@@ -158,3 +158,11 @@ manifest, use DataSync for the bulk copy, and run the
 validator as a Step Functions workflow instead of one
 Lambda per object. None of those are in the lab, and
 none are claimed to be.
+
+The three additions built after this design (v1.3.0) are
+documented where they live, not here: the EFS secondary
+target (`docs/EFS.md`), the three-way migration comparison
+(`docs/COMPARISON.md`), and cross-region replication with
+measured lag and a failover drill (`docs/CRR.md`). All three
+are real-AWS-only and gated off by default; none of them
+changes the architecture above.

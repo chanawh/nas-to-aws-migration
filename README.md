@@ -41,6 +41,9 @@ as one, and the Terraform is the same code as a real AWS run.
 | Integrity | 0 mismatches on every verify; 10/10 injected corruptions detected and repaired | `evidence/scaled-run-10gb-2026-11-22.json` |
 | Cost | list-price model only; no real AWS spend exists | `docs/COST.md` |
 | Real-cloud drill readiness (v1.2.1) | drills take real paths on real AWS/Azure with dynamic backend labels (no stub on real cloud); OIDC workflow dispatch is the primary path | `docs/REAL_AWS_ONE_DAY.md`, `docs/AZURE_BLOB.md`, `.github/workflows/real-aws.yml` |
+| Migration comparison (Garage, 24-file demo) | engine 1.24 MB/s and `aws s3 sync` 0.21 MB/s, both verify 24/24 passed; DataSync skipped (not emulated). The dataset is 1.16 MB, so these are per-call overhead, not throughput; the 10 GB comparison runs on real AWS | `evidence/comparison-2026-11-25.json`, `docs/COMPARISON.md` |
+| EFS secondary target | copy/verify logic unit-tested against a local stand-in; the real EFS mount is real-AWS-only, **not measured** | `docs/EFS.md` |
+| Cross-region replication | Terraform validates; lag + failover scripts unit-tested and refuse cleanly on emulators; replication itself is real-AWS-only, **not measured** | `docs/CRR.md` |
 
 The parallel number is the honest one, not the hoped-for one:
 on the local emulator parallelism buys ~13% at 4 workers and
@@ -61,11 +64,15 @@ flowchart LR
     CW[CloudWatch alarms]
     DS[DataSync\nreal AWS only]
     FSx[FSx ONTAP\nreal AWS only]
+    EFS[EFS\nreal AWS only]
+    CRR[S3 CRR\nreal AWS only]
     OneFS --> Sync --> S3
     S3 --> SQS --> Lambda --> DDB
     Lambda -. mismatch .-> SNS
     CW -. alarm .-> SNS
     S3 --> DS --> FSx
+    Sync -. POSIX .-> EFS
+    S3 -. replicate .-> CRR
 ```
 
 ## Who built this, and why
@@ -127,10 +134,12 @@ with, and evidence that the argument was thought through.
 | Lambda | Validator: re-downloads each new object, re-hashes it, writes the verdict to DynamoDB | Created in moto; execution is mocked there - handler is unit-tested directly |
 | CloudWatch | Log group for the validator; alarms on Lambda errors and on a stuck validation queue | Yes |
 | FSx for NetApp ONTAP | File-share target, 1024 GiB, with an SVM and volume | **No - real AWS only**, gated off by `enable_fsx_datasync = false` |
-| DataSync | Task S3 -> FSx, verify POINT_IN_TIME_CONSISTENT, UID/GID BOTH | **No - real AWS only**, same gate |
+| DataSync | Task S3 -> FSx, verify POINT_IN_TIME_CONSISTENT, UID/GID BOTH; plus a second task NAS -> S3 (finance) for the migration comparison | **No - real AWS only**, same gate for the FSx task; the comparison task is gated off by `enable_datasync_s3 = false` |
+| EFS | Secondary file-system target for POSIX workloads, encrypted, mount targets in the default VPC | **No - real AWS only**, gated off by `enable_efs = false` |
+| S3 cross-region replication | Each share bucket replicates to a destination bucket in us-east-1, with a replica KMS key there | **No - real AWS only**, gated off by `enable_crr = false` |
 | CloudTrail | Multi-region trail logging every API call to its own bucket | **No - real AWS only**, gated off by `enable_cloudtrail = false` |
 
-Flow: OneFS SMB -> Python sync -> S3 (KMS) -> S3 event -> SQS -> Lambda validator -> DynamoDB audit, with SNS on failure and CloudWatch watching the validator. On real AWS, DataSync then copies S3 to FSx for the applications that need a file system. Total Terraform: 41 resources to add on an emulator run, up from 23 before these services.
+Flow: OneFS SMB -> Python sync -> S3 (KMS) -> S3 event -> SQS -> Lambda validator -> DynamoDB audit, with SNS on failure and CloudWatch watching the validator. On real AWS, DataSync then copies S3 to FSx for the applications that need a file system. EFS is the second file-system target (same data, POSIX, via `scripts/migrate_efs.py`); S3 cross-region replication copies each share bucket to us-east-1. Total Terraform: 41 resources to add on an emulator run, up from 23 before these services.
 
 Use the new flags to wire the CLI in: `sync --dynamodb-table nas2aws-migration-audit` writes 24 audit records, `verify --sns-topic-arn <arn>` publishes on FAIL. Set `alert_email` in Terraform to get the SNS alerts by email.
 
@@ -154,6 +163,12 @@ emulated at all. This project does not pretend otherwise.
 | `scripts/start_moto.sh` | moto server, the no-Docker fallback used to run this in the VM |
 | `scripts/run_local_demo.sh` | Full live demo against moto: Terraform apply, sync, verify, corrupt, repair |
 | `scripts/run_scaled_demo.py` | Scaled run (default 10,000 x 1 MB files) against any S3 endpoint: sync, verify, corrupt, repair, JSON evidence |
+| `scripts/compare_migration.py` | Same dataset three ways (engine, `aws s3 sync`, DataSync) with per-method SHA-256 verify, JSON evidence; DataSync is real-AWS-only |
+| `scripts/migrate_efs.py` | Copy the dataset to an EFS mount with SHA-256 verify; the real mount is real-AWS-only |
+| `scripts/crr_lag.py` / `scripts/crr_failover.py` | CRR lag measurement (canary) and failover drill (verify the replica against the manifest); both real-AWS-only |
+| `docs/COMPARISON.md` | The three-way comparison: methods, the Garage demo result, the real-AWS run |
+| `docs/EFS.md` | The EFS secondary target: design choice, the copy script, the real-AWS run |
+| `docs/CRR.md` | Cross-region replication: design, lag measurement, failover drill, the real-AWS run |
 | `docs/SCALED_RUN.md` | The 2026-11-22 10 GB run: backend choice, timings, cost model |
 | `docs/CUTOVER_RUNBOOK.md` | The cutover procedure, step by step |
 | `docs/ONEFS_VIRTUAL_NODE.md` | The source side: OneFS Simulator virtual node in VMware Workstation Pro, mount, seed, migrate |
@@ -299,6 +314,22 @@ rule in `terraform/s3.tf` is for.
   docker-compose file and the endpoint flag are written for it, and
   the S3 API calls are identical - but the first LocalStack run on
   your machine is still yours to confirm.
+- Migration comparison (v1.3.0): the harness runs the 24-file demo
+  dataset three ways against Garage — engine 1.24 MB/s and `aws s3
+  sync` 0.21 MB/s, both verify 24/24 passed; DataSync is recorded
+  as skipped (not emulated). The 10 GB comparison runs on real AWS.
+  See `docs/COMPARISON.md` and
+  `evidence/comparison-2026-11-25.json`. The DataSync NAS -> S3
+  task (finance share) is Terraform-validated only, gated off.
+- EFS secondary target (v1.3.0): the copy/verify logic is
+  unit-tested against a local directory stand-in; the Terraform is
+  validated only, gated off. The real EFS mount is real-AWS-only
+  and not measured. See `docs/EFS.md`.
+- Cross-region replication (v1.3.0): the Terraform is validated
+  only, gated off; the lag and failover scripts are unit-tested
+  and refuse cleanly on Garage (exit 2, "not measured").
+  Replication itself is real-AWS-only and not measured. See
+  `docs/CRR.md`.
 - Real AWS: not run. No AWS account is connected here.
 
 ## Resume bullet (use only after a clean verify against an emulator or real AWS)

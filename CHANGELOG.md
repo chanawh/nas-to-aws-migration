@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.3.0, 2026-11-25
+
+Three additions to the optimal design, all real-AWS-only and
+gated off by default. EFS secondary target
+(`terraform/efs.tf`, `scripts/migrate_efs.py`): an encrypted
+EFS file system with mount targets in the default VPC (data
+sources, zero new network resources) and a copy script with
+per-share quotas and a SHA-256 verify pass reusing the engine's
+hashing and manifest shape; the copy/verify logic is unit-tested
+against a local stand-in and the backend label comes from
+`/proc/mounts`, so a local directory is never labelled EFS.
+Migration comparison (`scripts/compare_migration.py`):
+the same dataset three ways (engine, `aws s3 sync`, DataSync)
+into per-method buckets with a SHA-256 verify pass per method;
+DataSync is recorded as skipped on emulators (not emulated),
+never a fake number, and covers the finance share only; a new
+DataSync NAS -> S3 task (finance) is gated by
+`enable_datasync_s3`, via a separately-deployed agent. Verified
+live on Garage, 24-file demo dataset
+(`evidence/comparison-2026-11-25.json`): engine 1.24 MB/s and
+s3sync 0.21 MB/s, both verify 24/24 passed -- the dataset is
+1.16 MB, so these are per-call overhead, not throughput; the
+10 GB comparison runs on real AWS. Cross-region replication
+(`terraform/crr.tf`, `scripts/crr_lag.py`,
+`scripts/crr_failover.py`): per-share replication rules to
+us-east-1 with a second customer-managed KMS key there, a
+canary-based lag measurement, and a failover drill that verifies
+the replica against the source manifest; both scripts refuse
+cleanly on emulators (exit 2, "not measured"). Replication
+itself is real-AWS-only and unmeasured. `scripts/empty_buckets.py`
+also empties the replica buckets so the destroy works with CRR
+enabled. Tests: 5 EFS + 12 comparison + 12 CRR, all passing
+(63 total with the 34 existing). Terraform validates clean.
+
 ## v1.2.1, 2026-11-24
 
 Real-cloud measurement, no new emulator numbers. The v1.2.0

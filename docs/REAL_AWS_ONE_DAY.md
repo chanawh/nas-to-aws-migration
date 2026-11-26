@@ -259,6 +259,35 @@ is the next lever before a 1 TB run is worth doing. The
 one-day run is the 10 GB throughput benchmark plus the
 seven drills, under $1 without FSx.
 
+## The three new pieces on real AWS (v1.3.0)
+
+EFS, the migration comparison, and CRR are all gated off by
+default and real-AWS-only. They are not part of the one-day
+dispatch above; each is a separate apply + run + destroy, in
+this order (cheapest first). The detail lives in their docs;
+this is the run order.
+
+1. **Comparison** (`docs/COMPARISON.md`): apply with
+   `enable_datasync_s3=true` and the agent ARN
+   (`-var datasync_agent_arn=<arn>`, the agent deployed
+   separately near the OneFS node), then run the harness on the
+   10 GB dataset with `S3_ENDPOINT=""` and all three methods.
+   The evidence is `evidence/comparison-real-aws-<date>.json`.
+   The DataSync half needs the agent; without it, run the
+   engine and s3sync halves only.
+2. **CRR** (`docs/CRR.md`): apply with `enable_crr=true`
+   (after the base apply, and after the sync -- the failover
+   drill needs the manifest), then the lag script and the
+   failover drill on the finance share. The evidence is
+   `evidence/crr-lag-<date>.json` and
+   `evidence/crr-failover-<date>.json`. Destroy the same day;
+   `scripts/empty_buckets.py` empties the replica buckets
+   first.
+3. **EFS** (`docs/EFS.md`): apply with `enable_efs=true`,
+   mount the file system on an EC2 instance in the default VPC,
+   run `scripts/migrate_efs.py`, unmount, destroy the same day.
+   Cost for all three is from Cost Explorer, not a model.
+
 ### Azure Blob real run
 
 The Blob drills take the same shape on real Azure. The drill
