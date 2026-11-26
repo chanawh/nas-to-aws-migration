@@ -48,6 +48,20 @@ output "cloudtrail_enabled" {
   value = var.enable_cloudtrail
 }
 
+output "efs_enabled" {
+  description = "True only when enable_efs was set. False on every emulator run."
+  value       = var.enable_efs
+}
+
+output "efs_file_system_id" {
+  value = var.enable_efs ? aws_efs_file_system.migration[0].id : ""
+}
+
+output "efs_dns_name" {
+  description = "Mount with: mount -t nfs4 -o nfsvers=4.1 <dns>:/ <mount-point>"
+  value       = var.enable_efs ? aws_efs_file_system.migration[0].dns_name : ""
+}
+
 output "endpoint_url" {
   description = "Emulator address in use, or empty for real AWS."
   value       = var.use_emulator ? var.endpoint_url : ""

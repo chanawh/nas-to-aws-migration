@@ -90,6 +90,12 @@ variable "enable_cloudtrail" {
   default     = false
 }
 
+variable "enable_efs" {
+  description = "Real AWS only: build an EFS file system (encrypted) with mount targets in the default VPC, as the secondary migration target for POSIX workloads that cannot go to object storage. False by default - EFS is not emulated, so enabling this against an emulator will fail."
+  type        = bool
+  default     = false
+}
+
 variable "vpc_cidr" {
   description = "VPC CIDR for the FSx/DataSync network. Only used when enable_fsx_datasync is true."
   type        = string
