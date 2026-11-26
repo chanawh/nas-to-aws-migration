@@ -120,6 +120,18 @@ variable "datasync_onefs_subdirectory" {
   default     = "/finance"
 }
 
+variable "enable_crr" {
+  description = "Real AWS only: build S3 cross-region replication from each share bucket to a destination bucket in replica_region, with a replica KMS key there. False by default - replication is not emulated (Garage/moto do not replicate), so enabling this against an emulator will fail."
+  type        = bool
+  default     = false
+}
+
+variable "replica_region" {
+  description = "Region for the CRR destination buckets and the replica KMS key. Only used when enable_crr is true."
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "vpc_cidr" {
   description = "VPC CIDR for the FSx/DataSync network. Only used when enable_fsx_datasync is true."
   type        = string

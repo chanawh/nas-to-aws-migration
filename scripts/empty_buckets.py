@@ -14,6 +14,13 @@ The share buckets carry a GOVERNANCE Object Lock default retention
 (30 days), so deleting a retained version needs the break-glass
 BypassGovernanceRetention. The OIDC role has that permission.
 
+The replica buckets (CRR, <prefix>-<share>-replica, us-east-1)
+are also emptied here when they exist -- they are
+force_destroy=false, so a destroy would refuse to delete them
+otherwise. The S3 client follows the cross-region redirect, so
+one client empties both regions. A replica bucket that does not
+exist (CRR not enabled) is skipped, like any other missing bucket.
+
 The ransomware drill's lock-probe bucket is NOT emptied here: its
 probe object is under a 1-day GOVERNANCE retention and cannot be
 deleted yet, so that bucket is left and must be removed manually
@@ -91,6 +98,8 @@ def main():
 
     buckets = [f"{args.bucket_prefix}-{s}" for s in SHARES]
     buckets.append(f"{args.bucket_prefix}-cloudtrail")
+    # CRR replica buckets (skipped when they do not exist).
+    buckets += [f"{args.bucket_prefix}-{s}-replica" for s in SHARES]
     total_v = total_m = 0
     for bucket in buckets:
         v, m = empty_bucket(s3, bucket, bypass)

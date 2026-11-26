@@ -67,6 +67,19 @@ output "datasync_s3_task_arn" {
   value       = var.enable_datasync_s3 ? aws_datasync_task.cmp[0].arn : ""
 }
 
+output "crr_enabled" {
+  description = "True only when enable_crr was set. False on every emulator run."
+  value       = var.enable_crr
+}
+
+output "replica_bucket_names" {
+  value = var.enable_crr ? { for s in var.shares : s => "${var.bucket_prefix}-${s}-replica" } : {}
+}
+
+output "replica_kms_key_arn" {
+  value = var.enable_crr ? aws_kms_key.replica[0].arn : ""
+}
+
 output "endpoint_url" {
   description = "Emulator address in use, or empty for real AWS."
   value       = var.use_emulator ? var.endpoint_url : ""
