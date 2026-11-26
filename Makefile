@@ -5,14 +5,14 @@
 
 help:
 	@echo "make test      run the 25 S3 unit tests"
-@echo "make test-blob run the 9 Azure Blob tests (Azurite must be running)"
+	@echo "make test-blob run the 9 Azure Blob tests (Azurite must be running)"
 	@echo "make fmt       check Terraform formatting"
 	@echo "make validate  validate Terraform"
 	@echo "make demo      run the full moto demo end to end"
 	@echo "make clean     remove Terraform and Python caches"
 
 test:
-	cd python && python3 -m unittest discover -s tests -v
+	cd python && .venv/bin/python -m unittest discover -s tests -v
 
 test-blob:
 	cd python && $(HOME)/workspace/nas-to-aws-migration-venv-azure/bin/python -m unittest discover -s tests -p "test_blob_sync.py" -v
