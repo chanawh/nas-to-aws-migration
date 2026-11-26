@@ -1,0 +1,64 @@
+{
+  "backend": "Garage (local S3 emulator)",
+  "dataset": {
+    "files": 24,
+    "bytes": 1163264
+  },
+  "methods": {
+    "engine": {
+      "ran": true,
+      "shares": [
+        "finance",
+        "it-support",
+        "it-operations",
+        "operations"
+      ],
+      "objects": 24,
+      "bytes": 1163264,
+      "seconds": 0.938,
+      "mb_s": 1.24,
+      "verify": {
+        "checked": 24,
+        "mismatched": 0,
+        "passed": true
+      },
+      "verification": "per-object SHA-256 (engine verify)",
+      "notes": [
+        "Engine uploads only changed objects (SHA-256 compared against the bytes in S3); a re-run copies 0."
+      ]
+    },
+    "s3sync": {
+      "ran": true,
+      "shares": [
+        "finance",
+        "it-support",
+        "it-operations",
+        "operations"
+      ],
+      "objects": 24,
+      "bytes": 1163264,
+      "seconds": 5.519,
+      "mb_s": 0.21,
+      "verify": {
+        "checked": 24,
+        "mismatched": 0,
+        "passed": true
+      },
+      "verification": "engine verify pass over the s3-sync'd bucket (s3 sync itself does no per-object SHA-256 verification)",
+      "notes": [
+        "s3 sync compares by size/mtime by default, not by checksum; a corrupted object with the same size/mtime is not re-uploaded."
+      ]
+    },
+    "datasync": {
+      "ran": false,
+      "skipped_reason": "DataSync is a managed service; not emulated by moto/Garage"
+    }
+  },
+  "ran": [
+    "engine",
+    "s3sync"
+  ],
+  "skipped": {
+    "datasync": "DataSync is a managed service; not emulated by moto/Garage"
+  }
+}

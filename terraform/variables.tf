@@ -96,6 +96,30 @@ variable "enable_efs" {
   default     = false
 }
 
+variable "enable_datasync_s3" {
+  description = "Real AWS only: build the DataSync task from the on-prem NAS (via a DataSync agent) to the finance S3 bucket, for the migration comparison in scripts/compare_migration.py. False by default - DataSync is not emulated, so enabling this against an emulator will fail."
+  type        = bool
+  default     = false
+}
+
+variable "datasync_agent_arn" {
+  description = "ARN of the DataSync agent VM (deployed separately, near the OneFS Simulator). Required when enable_datasync_s3 is true; empty otherwise."
+  type        = string
+  default     = ""
+}
+
+variable "datasync_onefs_host" {
+  description = "OneFS server hostname or IP as the DataSync agent sees it (the agent is on the local network with the OneFS node)."
+  type        = string
+  default     = "192.168.1.50"
+}
+
+variable "datasync_onefs_subdirectory" {
+  description = "NFS export path on the OneFS node for the finance share (the DataSync NFS location subdirectory). Must match the export the agent mounts."
+  type        = string
+  default     = "/finance"
+}
+
 variable "vpc_cidr" {
   description = "VPC CIDR for the FSx/DataSync network. Only used when enable_fsx_datasync is true."
   type        = string

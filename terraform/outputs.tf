@@ -62,6 +62,11 @@ output "efs_dns_name" {
   value       = var.enable_efs ? aws_efs_file_system.migration[0].dns_name : ""
 }
 
+output "datasync_s3_task_arn" {
+  description = "DataSync NAS -> S3 comparison task. Empty unless enable_datasync_s3 was set."
+  value       = var.enable_datasync_s3 ? aws_datasync_task.cmp[0].arn : ""
+}
+
 output "endpoint_url" {
   description = "Emulator address in use, or empty for real AWS."
   value       = var.use_emulator ? var.endpoint_url : ""
